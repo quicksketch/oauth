@@ -1,0 +1,262 @@
+<?php
+
+require_once "OAuth.php";
+
+/**
+ * Implementation of hook_menu
+ */
+function oauth_menu() {
+  $items['oauth/request'] = array(
+    'title' => t('Request token'), 
+    'page callback' => 'oauth_request_token',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['oauth/auth'] = array(
+    'title' => t('Authorize remote service'), 
+    'page callback' => 'oauth_auth_token',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['oauth/access'] = array(
+    'title' => t('Request'), 
+    'page callback' => 'oauth_access_token',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/settings/oauth'] = array(
+    'title' => t('Remote service access'), 
+    'page callback' => 'oauth_settings',
+    'access arguments' => array('access content'),
+  );
+
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perms
+ */
+function oauth_perms() {
+  return array("authorize external services", "consume provided services");
+}
+
+/**
+ * Implementation of hook_user
+ *
+ * Used to provide consumer key/secret for consumers
+ */
+function oauth_user($op, &$edit, $account, $category) {
+  global $user;
+  switch ($op) {
+    case 'view' :
+      if (($account->uid = $user->uid) && user_access("consume provided services")) {
+        $consumer = oauth_get_consumer($account->uid);
+        $account->content['consumer_key'] = array();
+        $account->content['consumer_key'] += array(
+          '#type' => 'user_profile_category',
+          '#attributes' => array('class' => 'user-member'),
+          '#weight' => 5,
+          '#title' => t('External services'),
+        );
+
+        $account->content['consumer_key']['key'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('Consumer key'),
+          '#value' => $consumer->key,
+          '#weight' => 1
+        );
+        $account->content['consumer_key']['secret'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('Consumer secret'),
+          '#value' => $consumer->secret,
+          '#weight' => 2
+        );
+      }
+      break;
+  }
+
+}
+
+
+function _oauth_init_server() {
+  static $server = null;
+  if (is_null($server)) {
+    $server = new OAuthServer(new DrupalOAuthDataStore());
+    $sha1_method = new OAuthSignatureMethod_HMAC_SHA1();
+    $plaintext_method = new OAuthSignatureMethod_PLAINTEXT();
+    $server->add_signature_method($sha1_method);
+    $server->add_signature_method($plaintext_method);
+  }
+  return $server;
+}
+
+function oauth_request_token() {
+  $server = _oauth_init_server();
+
+  // Remove the q variable from the query string, as it will break
+  // the signature validation.
+  $q = $_GET['q'];
+  unset($_GET['q']);
+
+  try {
+    $req = OAuthRequest::from_request();
+    $token = $server->fetch_request_token($req);
+    print $token;
+  } catch (OAuthException $e) {
+    print($e->getMessage() . "\n<hr />\n");
+    print_r($req);
+    die();
+  }
+
+  // Set the $_GET['q'] back to it's original value
+  $_GET['q'] = $q;
+}
+
+function oauth_auth_token() {
+  // Redirect to the right form, or present an error.
+  global $user;
+  if ($user->uid != 0) {
+    if (user_access("authorize external services")) {
+      return drupal_get_form("oauth_grant_access");
+    }
+    else {
+      drupal_set_message("error", t("You are not authorized to allow external services access to this system."));
+      drupal_access_denied();
+    }
+  }
+  else {
+    return drupal_get_form("user_login");
+  }
+}
+
+function oauth_access_token() {
+  $server = _oauth_init_server();
+
+  // Remove the q variable from the query string, as it will break
+  // the signature validation.
+  $q = $_GET['q'];
+  unset($_GET['q']);
+
+  try {
+    $req = OAuthRequest::from_request();
+    $token = $server->fetch_access_token($req);
+    print $token;
+  } catch (OAuthException $e) {
+    print($e->getMessage() . "\n<hr />\n");
+    print_r($req);
+    die();
+  }
+
+  // Set the $_GET['q'] back to it's original value
+  $_GET['q'] = $q;
+}
+
+/**
+ * Form callback for granting access to the consumer
+ */
+function oauth_grant_access() {
+  #todo tripple check image reference.
+  $form['oauth_callback'] = array('#type' => 'hidden', '#value' => $_GET['oauth_callback']);
+  $form['oauth_token'] = array('#type' => 'hidden', '#value' => $_GET['oauth_token']);
+
+  $form['confirm'] = array('#type' => 'submit', '#value' => t('Grant access'));
+  return $form;
+}
+
+function oauth_grant_access_submit($form, $form_state) {
+  $server = _oauth_init_server();
+  $q = $_GET['q'];
+  unset($_GET['q']);
+  try {
+    $req = OAuthRequest::from_request();
+    oauth_authorize_request_token($form_state['values']['oauth_token']);    
+    drupal_goto($req->get_parameter('oauth_callback'));
+  } catch (OAuthException $e) {
+    print($e->getMessage() . "\n<hr />\n");
+    print_r($req);
+    die();
+  }
+  // Set the $_GET['q'] back to it's original value
+  $_GET['q'] = $q;
+}
+
+function oauth_authorize_request_token($key) {
+  db_query("UPDATE {oauth_token} SET authorized = 1 WHERE token_key = '%s'", $key);
+}
+# Return a list of services
+function oauth_services() {
+  
+}
+
+function oauth_generate_consumer($uid) {
+  $key = user_password(32);
+  $secret = user_password(32);
+  oauth_save_consumer($uid, $key, $secret);
+  return new OAuthConsumer($key, $secret);
+}
+
+function oauth_save_consumer($uid, $key, $secret) {
+  db_query("INSERT INTO {oauth_consumer} VALUES (%d, '%s', '%s')", $uid, $key, $secret);
+}
+
+function oauth_get_consumer($uid) {
+  $result = db_query("SELECT * FROM {oauth_consumer} WHERE uid=%d", $uid);
+  if ($object = db_fetch_object($result)) {
+    return new OAuthConsumer($object->consumer_key, $object->consumer_secret);
+  }
+  else {
+    return oauth_generate_consumer($uid);
+  }
+}
+
+/**
+ * Database abstraction class
+ * For now, this is using the cache table, for easy testing.
+ */
+class DrupalOAuthDataStore extends OAuthDataStore {
+
+  function lookup_consumer($consumer_key) {
+    $result = db_query("SELECT * FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer_key);
+    if ($object = db_fetch_object($result)) {
+      return new OAuthConsumer($object->consumer_key, $object->consumer_secret);
+    }
+    return null;
+  }
+
+  function lookup_token($consumer, $token_type, $token) {
+    $result = db_query("SELECT * FROM {oauth_token} WHERE type=%d AND consumer_key=%d AND token_key = %d", $consumer->key, $token_type, $token);
+    if ($object = db_fetch_object($result)) {
+      return new OAuthToken($object->token_key, $object->token_secret);
+    }
+    return null;
+  }
+
+  function lookup_nonce($consumer, $token, $nonce, $timestamp) {
+    #No idea how to implement this. The library is not very clear at all.
+    return null;
+  }
+
+  function new_request_token($consumer) {
+    $token = new OAuthToken(user_password(32), user_password(32));
+    db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret) VALUES ('%s', '%s', '%s', '%s')", $consumer->key, 'request', $token->key, $token->secret);
+    return $token;
+  }
+
+  function new_access_token($request_token, $consumer) {
+    if ($object = db_fetch_object(db_query("SELECT * FROM {oauth_token} WHERE type='request' and token_key = %d", $request_token->key))) {
+      if ($object->authorized) {
+        $token = new OAuthToken(user_password(32), user_password(32));
+        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret) VALUES ('%s', '%s', '%s', '%s')", $consumer->key, 'access', $token->key, $token->secret);
+
+        db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
+        return $token;
+      }
+    }
+    return null;
+  }
+}
+
