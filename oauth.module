@@ -27,13 +27,18 @@ function oauth_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['admin/settings/oauth'] = array(
-    'title' => t('Remote service access'), 
-    'page callback' => 'oauth_settings',
-    'access arguments' => array('access content'),
+  /**
+   * @TODO Move the consumer settings to a separate tab.
+   */
+  /*
+  $items['user/%user/services'] = array(
+    'title' => t('Consumer settings'), 
+    'page callback' => 'oauth_consumer_view',
+    'access callback' => 'oauth_access_consumer_view',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10
   );
-
-
+  */
   return $items;
 }
 
@@ -62,18 +67,35 @@ function oauth_user($op, &$edit, $account, $category) {
           '#weight' => 5,
           '#title' => t('External services'),
         );
-
+        $account->content['consumer_key']['request_url'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('Request token URL'),
+          '#value' => url('oauth/request', array('absolute' => TRUE)),
+          '#weight' => 1
+        );
+        $account->content['consumer_key']['auth_url'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('User authentication URL'),
+          '#value' => url('oauth/auth', array('absolute' => TRUE)),
+          '#weight' => 2
+        );
+        $account->content['consumer_key']['access_url'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => t('Access token URL'),
+          '#value' => url('oauth/access', array('absolute' => TRUE)),
+          '#weight' => 3
+        );
         $account->content['consumer_key']['key'] = array(
           '#type' => 'user_profile_item',
           '#title' => t('Consumer key'),
           '#value' => $consumer->key,
-          '#weight' => 1
+          '#weight' => 4
         );
         $account->content['consumer_key']['secret'] = array(
           '#type' => 'user_profile_item',
           '#title' => t('Consumer secret'),
           '#value' => $consumer->secret,
-          '#weight' => 2
+          '#weight' => 5
         );
       }
       break;
@@ -81,7 +103,9 @@ function oauth_user($op, &$edit, $account, $category) {
 
 }
 
-
+/**
+ * Initialize and store an OAuthServer object.
+ */
 function _oauth_init_server() {
   static $server = null;
   if (is_null($server)) {
@@ -94,6 +118,9 @@ function _oauth_init_server() {
   return $server;
 }
 
+/**
+ * Generate a request token from the request
+ */
 function oauth_request_token() {
   $server = _oauth_init_server();
 
@@ -116,6 +143,11 @@ function oauth_request_token() {
   $_GET['q'] = $q;
 }
 
+/**
+ * Authorize a request token.
+ *
+ * Redirects to login form if not logged in, and displays the grant access form once logged in.
+ */
 function oauth_auth_token() {
   // Redirect to the right form, or present an error.
   global $user;
@@ -167,6 +199,11 @@ function oauth_grant_access() {
   return $form;
 }
 
+/**
+ * Submit callback for oauth/auth
+ *
+ * Authorizes an existing oauth request token and redirects to sender.
+ */
 function oauth_grant_access_submit($form, $form_state) {
   $server = _oauth_init_server();
   $q = $_GET['q'];
@@ -184,14 +221,65 @@ function oauth_grant_access_submit($form, $form_state) {
   $_GET['q'] = $q;
 }
 
+/**
+ * Authorize a request token
+ *
+ * Set the authorized property for the token, to allow an access token to be generated, 
+ * also set the UID of the request token.
+ *
+ * @param key
+ *   Request token key.
+ */
 function oauth_authorize_request_token($key) {
-  db_query("UPDATE {oauth_token} SET authorized = 1 WHERE token_key = '%s'", $key);
+  global $user;
+  db_query("UPDATE {oauth_token} SET authorized = 1, uid=%d WHERE token_key = '%s'", $user->uid, $key);
 }
+
+/**
+ * Authorize access from access token
+ *
+ * Used by services that implement oauth access. This function also sets the active user to the person
+ * who authorized the access token.
+ *
+ * @param key
+ *   Access token key
+ * @param secret
+ *   Access token secret
+ * @return
+ *   The user ID assigned to the token if successful, or null if unsuccessful.
+ */
+function oauth_authorize_access($key, $secret) {
+  global $user;
+  $result = db_query("SELECT * FROM {oauth_token} WHERE type='access' AND token_key = '%s' AND token_secret='%s'", $key, $secret);
+  if ($object = db_fetch_object($result)) {
+    $user = user_load($object->uid);
+    return $user->uid;
+  }
+  return null;
+}
+
 # Return a list of services
 function oauth_services() {
   
 }
 
+/**
+ * Implementation of hook_cron
+ *
+ * Prune the oauth_nonce table
+ */
+function oauth_cron() {
+  db_query("DELETE FROM {oauth_nonce} WHERE timestamp > %d", strtotime("-1 day"));
+}
+
+/**
+ * Generate a new consumer ID for a user.
+ *
+ * @param uid
+ *    User ID to generate the consumer record for
+ * @return
+ *    OAuthConsumer object for new client.
+ */
 function oauth_generate_consumer($uid) {
   $key = user_password(32);
   $secret = user_password(32);
@@ -199,10 +287,30 @@ function oauth_generate_consumer($uid) {
   return new OAuthConsumer($key, $secret);
 }
 
+/**
+ * Save consumer record to oauth_consumer table
+ *
+ * @param uid
+ *   User ID to save consumer record for
+ * @param key
+ *   Consumer Key
+ * @param secret
+ *   Consumer Secret
+ */
 function oauth_save_consumer($uid, $key, $secret) {
   db_query("INSERT INTO {oauth_consumer} VALUES (%d, '%s', '%s')", $uid, $key, $secret);
 }
 
+/**
+ * Return consumer object for a user
+ *
+ * If the consumer record does not exist, it will be created.
+ *
+ * @param uid
+ *   User ID to retrieve consumer object for.
+ * @return
+ *   Consumer object.
+ */
 function oauth_get_consumer($uid) {
   $result = db_query("SELECT * FROM {oauth_consumer} WHERE uid=%d", $uid);
   if ($object = db_fetch_object($result)) {
@@ -215,7 +323,6 @@ function oauth_get_consumer($uid) {
 
 /**
  * Database abstraction class
- * For now, this is using the cache table, for easy testing.
  */
 class DrupalOAuthDataStore extends OAuthDataStore {
 
@@ -236,8 +343,12 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   }
 
   function lookup_nonce($consumer, $token, $nonce, $timestamp) {
-    #No idea how to implement this. The library is not very clear at all.
-    return null;
+    $nonce = db_result(db_query("SELECT nonce FROM {oauth_nonce} WHERE nonce='%s'", $nonce));
+    if (!$nonce) {
+      db_query("INSERT INTO {oauth_nonce} VALUES ('%s', %d)", $nonce, $timestamp);
+      return null;
+    }
+    return $nonce;
   }
 
   function new_request_token($consumer) {
@@ -250,7 +361,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
     if ($object = db_fetch_object(db_query("SELECT * FROM {oauth_token} WHERE type='request' and token_key = %d", $request_token->key))) {
       if ($object->authorized) {
         $token = new OAuthToken(user_password(32), user_password(32));
-        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret) VALUES ('%s', '%s', '%s', '%s')", $consumer->key, 'access', $token->key, $token->secret);
+        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'access', $token->key, $token->secret, $object->uid);
 
         db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
         return $token;
