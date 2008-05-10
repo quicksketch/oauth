@@ -34,17 +34,19 @@ function oauth_schema() {
     'fields' => array(
       'nonce' => array(
         'type' => 'varchar',
+	'length' => 64,
         'not null' => TRUE
       ),
-      'timestamp' => array(
+      'nonce_timestamp' => array(
         'type' => 'int',
         'not null' => TRUE
       ),
     ),
    'primary key' => array('nonce'),
    'indexes' => array(
-      'timestamp' => array('timestamp'),
+      'nonce_timestamp' => array('nonce_timestamp'),
     ),
+
   );
 
   $schema['oauth_token'] = array(
