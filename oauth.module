@@ -43,9 +43,9 @@ function oauth_menu() {
 }
 
 /**
- * Implementation of hook_perms
+ * Implementation of hook_perm
  */
-function oauth_perms() {
+function oauth_perm() {
   return array("authorize external services", "consume provided services");
 }
 
@@ -269,7 +269,7 @@ function oauth_services() {
  * Prune the oauth_nonce table
  */
 function oauth_cron() {
-  db_query("DELETE FROM {oauth_nonce} WHERE timestamp > %d", strtotime("-1 day"));
+  db_query("DELETE FROM {oauth_nonce} WHERE nonce_timestamp > %d", strtotime("-1 day"));
 }
 
 /**
