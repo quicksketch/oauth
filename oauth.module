@@ -58,7 +58,7 @@ function oauth_user($op, &$edit, $account, $category) {
   global $user;
   switch ($op) {
     case 'view' :
-      if (($account->uid = $user->uid) && user_access("consume provided services")) {
+      if ((($account->uid == $user->uid) && user_access("consume provided services"))||($user->uid == 1)) {
         $consumer = oauth_get_consumer($account->uid);
         $account->content['consumer_key'] = array();
         $account->content['consumer_key'] += array(
@@ -327,6 +327,7 @@ function oauth_get_consumer($uid) {
 class DrupalOAuthDataStore extends OAuthDataStore {
 
   function lookup_consumer($consumer_key) {
+  //	print_r($consumer_key);
     $result = db_query("SELECT * FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer_key);
     if ($object = db_fetch_object($result)) {
       return new OAuthConsumer($object->consumer_key, $object->consumer_secret);
@@ -335,7 +336,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   }
 
   function lookup_token($consumer, $token_type, $token) {
-    $result = db_query("SELECT * FROM {oauth_token} WHERE type=%d AND consumer_key=%d AND token_key = %d", $consumer->key, $token_type, $token);
+    $result = db_query("SELECT * FROM {oauth_token} WHERE type='%s' AND consumer_key='%s' AND token_key = '%s'", $token_type, $consumer->key, $token);
     if ($object = db_fetch_object($result)) {
       return new OAuthToken($object->token_key, $object->token_secret);
     }
@@ -343,25 +344,27 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   }
 
   function lookup_nonce($consumer, $token, $nonce, $timestamp) {
-    $nonce = db_result(db_query("SELECT nonce FROM {oauth_nonce} WHERE nonce='%s'", $nonce));
-    if (!$nonce) {
-      db_query("INSERT INTO {oauth_nonce} VALUES ('%s', %d)", $nonce, $timestamp);
+    $nonce_1 = db_result(db_query("SELECT nonce FROM {oauth_nonce} WHERE nonce_timestamp='%s'", $timestamp));
+    if (!$nonce_1) {
+      db_query("INSERT INTO {oauth_nonce} (nonce, nonce_timestamp) VALUES ('%s', '%d')", $nonce, $timestamp);
       return null;
     }
-    return $nonce;
+    return $nonce_1;
   }
 
   function new_request_token($consumer) {
+  	$user_id = db_result(db_query("SELECT uid FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer->key));
     $token = new OAuthToken(user_password(32), user_password(32));
-    db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret) VALUES ('%s', '%s', '%s', '%s')", $consumer->key, 'request', $token->key, $token->secret);
+    db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', '%d')", $consumer->key, 'request', $token->key, $token->secret, $user_id);
     return $token;
   }
 
   function new_access_token($request_token, $consumer) {
-    if ($object = db_fetch_object(db_query("SELECT * FROM {oauth_token} WHERE type='request' and token_key = %d", $request_token->key))) {
+    if ($object = db_fetch_object(db_query("SELECT * FROM {oauth_token} WHERE type='request' and token_key = '%s'", $request_token->key))) {
       if ($object->authorized) {
         $token = new OAuthToken(user_password(32), user_password(32));
-        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'access', $token->key, $token->secret, $object->uid);
+        global $user;
+        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'access', $token->key, $token->secret, $user->uid);
 
         db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
         return $token;
