@@ -90,6 +90,44 @@ function oauth_schema() {
       'oauth_token_key_type' => array('token_key', 'type'),
     ),
   );
+   $schema['oauth_services'] = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial', 
+        'unsigned' => TRUE,
+        'not null' => TRUE,     
+      ),
+      'consumer_key' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'services' => array(
+        'type' => 'varchar',
+        'length' => 10000,
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'session_id' => array(
+      	'type' => 'varchar',
+      	'length' => 64,
+      	'not null' => FALSE,
+      ),
+      'token_key' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => FALSE,
+      ),
+     ),
+   'primary key' => array('id'),
+   'indexes' => array(
+      'timestamp' => array('timestamp'),
+      ),
+ );
+  
   return $schema;
 }
 

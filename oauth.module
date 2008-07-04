@@ -118,13 +118,16 @@ function oauth_user($op, &$edit, $account, $category) {
  */
 function _oauth_init_server() {
   static $server = null;
-  if (is_null($server)) {
+  	require_once "OAuth.php";
+  	require_once "OAuth_TestServer.php";
     $server = new OAuthServer(new DrupalOAuthDataStore());
-    $sha1_method = new OAuthSignatureMethod_HMAC_SHA1();
+    $hmac_method = new OAuthSignatureMethod_HMAC_SHA1();
     $plaintext_method = new OAuthSignatureMethod_PLAINTEXT();
-    $server->add_signature_method($sha1_method);
+    $rsa_method = new TestOAuthSignatureMethod_RSA_SHA1();
+    $server->add_signature_method($hmac_method);
     $server->add_signature_method($plaintext_method);
-  }
+    $server->add_signature_method($rsa_method);
+    
   return $server;
 }
 
@@ -133,7 +136,7 @@ function _oauth_init_server() {
  */
 function oauth_request_token() {
   $server = _oauth_init_server();
-
+  
   // Remove the q variable from the query string, as it will break
   // the signature validation.
   $q = $_GET['q'];
@@ -172,6 +175,7 @@ function oauth_auth_token() {
   }
   else {
     return drupal_get_form("user_login");
+    //oauth_auth_token();
   }
 }
 
@@ -184,8 +188,10 @@ function oauth_access_token() {
   unset($_GET['q']);
 
   try {
-    $req = OAuthRequest::from_request();
+  	global $user;
+  	$req = OAuthRequest::from_request();
     $token = $server->fetch_access_token($req);
+    parse_str($token);
     print $token;
   } catch (OAuthException $e) {
     print($e->getMessage() . "\n<hr />\n");
@@ -222,6 +228,10 @@ function oauth_grant_access() {
   '#type' => 'hidden',
   '#value' => $_GET['oauth_nonce'],  
  );
+ $form['oauth_nonce_timestamp'] = array(
+  '#type' => 'hidden',
+  '#value' => $_GET['oauth_timestamp'], 	
+ );
   $form['services'] = array(
   '#title' => t('Select services'),
   '#type' => 'fieldset',  
@@ -249,12 +259,21 @@ function oauth_grant_access() {
 }
 
 /**
+ * 
+ * Asks users for granting proper access/deny permissions for different services
+ * 
+ * @param method_name 
+ * 			name of service provided by Services module
+ * 
+ * @param services_oauth_serialized
+ * 			a serialized array storing permissions for different services to be stored in oauth_services table
+ * 
  * Submit callback for oauth/auth
  *
  * Authorizes an existing oauth request token and redirects to sender.
  */
 function oauth_grant_access_submit($form, &$form_state) {
-
+  global $user;		
   module_invoke('services');
   $services = services_get_all();
   foreach ( $services as $service ){
@@ -262,22 +281,23 @@ function oauth_grant_access_submit($form, &$form_state) {
         $method_name = $service['#method'];
         
 	    if($form_state['values']['services'][$method_name] == 0 ){
-                       $access = 1;
-                          
+                       $services_oauth[$method_name]['name'] = $method_name;
+                       $services_oauth[$method_name]['permission'] = 1;   
                      }elseif($form_state['values']['services'][$method_name] == 1 ){
-                       $access = 0;     
+                       $services_oauth[$method_name]['name'] = $method_name;
+                       $services_oauth[$method_name]['permission'] = 0;      
          }
-   // drupal_set_message('<pre>'. print_r($form_state, TRUE) .'</pre>');
-  db_query("INSERT INTO { oauth_services } (consumer_key, service, permission, nonce) VALUES ('%s', '%s', '%d', '%s')", $form_state['values']['oauth_consumer_key'], $service['#method'], $access, $form_state['values']['oauth_nonce']) ;
-    }	
-	
+    }
+  $services_oauth_serialized = serialize($services_oauth);  
+  db_query("INSERT INTO {oauth_services} (consumer_key, services, timestamp, session_id ) VALUES ('%s', '%s', %d, '%s')", $form_state['values']['oauth_consumer_key'], $services_oauth_serialized, $form_state['values']['oauth_nonce_timestamp'], $user->sid) ; 	
+  
   $server = _oauth_init_server();
   $q = $_GET['q'];
   unset($_GET['q']);
   try {
     $req = OAuthRequest::from_request();
     oauth_authorize_request_token($form_state['values']['oauth_token']);    
-    //drupal_goto($req->get_parameter('oauth_callback'));
+    drupal_goto($req->get_parameter('oauth_callback'));
   } catch (OAuthException $e) {
     print($e->getMessage() . "\n<hr />\n");
     print_r($req);
@@ -300,8 +320,8 @@ function oauth_grant_access_submit($form, &$form_state) {
  */
 function oauth_authorize_request_token($key) {
   global $user;
-  db_query("UPDATE {oauth_token} SET authorized = 1, uid=%d WHERE token_key = '%s'", $user->uid, $key);;
-}
+  db_query("UPDATE {oauth_token} SET authorized = 1, uid=%d WHERE token_key = '%s'", $user->uid, $key);
+  }
 
 /**
  * Authorize access from access token
@@ -395,8 +415,7 @@ function oauth_get_consumer($uid) {
 class DrupalOAuthDataStore extends OAuthDataStore {
 
   function lookup_consumer($consumer_key) {
-  //	print_r($consumer_key);
-    $result = db_query("SELECT * FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer_key);
+   $result = db_query("SELECT * FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer_key);
     if ($object = db_fetch_object($result)) {
       return new OAuthConsumer($object->consumer_key, $object->consumer_secret);
     }
@@ -414,7 +433,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   function lookup_nonce($consumer, $token, $nonce, $timestamp) {
     $nonce_1 = db_result(db_query("SELECT nonce FROM {oauth_nonce} WHERE nonce_timestamp='%s'", $timestamp));
     if (!$nonce_1) {
-      db_query("INSERT INTO {oauth_nonce} (nonce, nonce_timestamp) VALUES ('%s', '%d')", $nonce, $timestamp);
+      db_query("INSERT INTO {oauth_nonce} (nonce, nonce_timestamp) VALUES ('%s', %d)", $nonce, $timestamp);
       return null;
     }
     return $nonce_1;
@@ -423,18 +442,31 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   function new_request_token($consumer) {
   	$user_id = db_result(db_query("SELECT uid FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer->key));
     $token = new OAuthToken(user_password(32), user_password(32));
-    db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', '%d')", $consumer->key, 'request', $token->key, $token->secret, $user_id);
+    db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'request', $token->key, $token->secret, $user_id);
     return $token;
   }
+/**
+ * 
+ *@param session_id
+ * 		is session id corresponding to logged in user 
+ * 		we are storing session id in oauth_services table to keep track of users and issued access tokens
+ * 
+ * @param user_id 
+ * 		user_id is actually $user->id but we are fetching it from oauth_consumer table and using it to get session_id from sessions 
+ * 		table and also storing its value to oauth_token table (corresponding to access token here) 
+ * 
+ */
 
-  function new_access_token($request_token, $consumer) {
+  function new_access_token($request_token, $consumer, $user = NULL) {
+  	
     if ($object = db_fetch_object(db_query("SELECT * FROM {oauth_token} WHERE type='request' and token_key = '%s'", $request_token->key))) {
       if ($object->authorized) {
         $token = new OAuthToken(user_password(32), user_password(32));
-        global $user;
-        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'access', $token->key, $token->secret, $user->uid);
-
-        db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
+        $user_id = db_result(db_query("SELECT uid FROM {oauth_consumer} WHERE consumer_key = '%s'", $consumer->key));
+        $session_id = db_result(db_query("SELECT sid FROM {sessions} WHERE uid=%d", $user_id));
+        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'access', $token->key, $token->secret, $user_id);
+		db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
+        db_query("UPDATE {oauth_services} SET token_key = '%s' WHERE session_id= '%s'", $token->key, $session_id);
         return $token;
       }
     }
@@ -442,6 +474,13 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   }
 }
 
+/**
+ * 
+ * this function is to make test calls to any oauth server for producing oauth tokens corresponding to your keys and secret
+ * 
+ * this code can be used by client to make calls to server to fetch and phrase tokens as we are doing here  
+ * 
+ */ 
 function oauth_test_calls(){
 	return	drupal_get_form("oauth_request_call");
  }
@@ -451,17 +490,11 @@ function oauth_request_call($form_state){
     if(!$_SESSION['oauth']['operation']){
     	$_SESSION['oauth']['operation'] = 'request';    	
     }
-    
-    $form['step'] = array(
-  	'#type' => 'hidden',
-  	'#value' => $step + 1
-    );
-     	  
-    // indicator of step number
-    $form['indicator'] = array(
-  	'#type' => 'fieldset',
-  	'#title' => t('Step @number', array('@number' => $_SESSION['oauth']['operation'])),
-    );
+    	// indicator of step number
+		$form['indicator'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Step @number', array('@number' => $_SESSION['oauth']['operation'])),
+		);
 	if($_SESSION['oauth']['operation'] == 'request'){
 		
 		$form['indicator']['consumer'] = array(
@@ -486,7 +519,19 @@ function oauth_request_call($form_state){
 			'#title' => t('Request URL'),
 			'#type' => 'textfield',
 			'#weight' => 5,
+			'#default_value' => 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'].'?q=oauth/request'
 		);
+		$form['indicator']['signature_method'] = array(
+			'#title' => t('Select Signature Method'),
+			'#type' => 'fieldset',
+		);
+		$form['indicator']['signature_method']['indicator']['sig_method'] = array(
+			'#title' => t('Please select signature method to use'),
+			'#type' => 'radios',
+			'#options' => array( 0 => t('HMAC-SHA1'), 1 => t('PLAINTEXT'), 2 => t('RSA-SHA1')),
+			'#weight' => 9,
+		);
+
 		$form['indicator']['request_call'] = array(
 			'#value' => t('Request Token Call'),
 			'#title' => t('Make call to server'),
@@ -504,17 +549,7 @@ function oauth_request_call($form_state){
 			'#title' => t('Authentication URL'),
 			'#type' => 'textfield',
 			'#weight' => 6,
-		);
-		$form['signature_method'] = array(
-			'#title' => t('Select Signature Method'),
-			'#type' => 'fieldset',
-		);
-		$form['signature_method']['indicator']['sig_method'] = array(
-			'#title' => t('Please select signature method to use'),
-			'#type' => 'radios',
-			'#options' => array( 0 => t('HMAC-SHA1'), 1 => t('PLAINTEXT'), 2 => t('RSA-SHA1')),
-			'#default_value' => 1,
-			'#weight' => 14,
+			'#default_value' => 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'].'?q=oauth/auth'
 		);
 		
 		$form['indicator']['token'] = array(
@@ -528,14 +563,16 @@ function oauth_request_call($form_state){
 			'#description' => t('Please paste token from above which you obtain from request call'),
 			'#type' => 'textfield',
 			'#weight' => 12,
+			'#default_value' => $form_state['data']['oauth_token'],
 		);
 		$form['indicator']['token']['oauth_token_secret'] = array(
 			'#title' => t('OAuth token secret'), 
 			'#description' => t('Please paste token secret from above which you obtain from request call'),
 			'#type' => 'textfield',
 			'#weight' => 13,
+			'#default_value' => $form_state['data']['oauth_token_secret'],
 		);
-		$form['auth_call'] = array(
+		$form['indicator']['auth_call'] = array(
 			'#value' => t('OAuth Authentication Call'),
 			'#type' => 'submit',
 			'#weight' => 14,
@@ -548,8 +585,9 @@ function oauth_request_call($form_state){
 			'#title' => t('Access URL'),
 			'#type' => 'textfield',
 			'#weight' => 7,
+			'#default_value' => 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'].'?q=oauth/access'
 		);
-		$form['access_call'] = array(
+		$form['indicator']['access_call'] = array(
 			'#value' => t('OAuth Access Token Call'),
 			'#type' => 'submit',
 			'#weight' => 15,
@@ -581,64 +619,88 @@ function oauth_request_call($form_state){
  	return $form;
 }
 
-function oauth_request_call_submit($form, &$form_state){
-	$key = $form_state['values']['consumer_key'];
-	$secret = $form_state['values']['consumer_secret'];
-	$request_url = $form_state['values']['request_url'];
-		
-	if($form_state['values']['sig_method'] == 0){
-	  $user_sig_method = 'HMAC-SHA1';	
-		}elseif($form_state['values']['sig_method'] == 1){
-	  		$user_sig_method = 'PLAINTEXT';	
-		  }elseif($form_state['values']['sig_method'] == 2){
-	  		$user_sig_method = 'RSA-SHA1';	
-	   }
-	$test_token = NULL;
-		 
-	if ($user_sig_method) {
-       $sig_method = $sig_methods[$user_sig_method];
-       print_r($sig_method);
-	}
-		
-	$plaintext_method = new OAuthSignatureMethod_PLAINTEXT();
-	//right now doing just for PLAINTEXT
-	$sig_method = $plaintext_method;
+function oauth_request_call_validate($form, &$form_state){
 	
-	$token = $form_state['values']['oauth_token'];
-    $token_secret = $form_state['values']['oauth_token_secret'];
-    
-    //drupal_set_message('<pre>'. print_r($sig_method, TRUE) .'</pre>');
-	$test_consumer = new OAuthConsumer($key, $secret, NULL);
-	
+	if($form_state['values']['op'] == 'Request Token Call'){
+		if(!$form_state['values']['consumer_key'] || !$form_state['values']['consumer_secret'] || !$form_state['values']['request_url'] || !$form_state['values']['sig_method']){
+			form_set_error('form', t('All Fields are Required to produce Request Tokens'));	
+		}
+	}		
+	if($form_state['values']['op'] == 'OAuth Authentication Call'){
+		if(!$form_state['values']['oauth_token'] || !$form_state['values']['oauth_token_secret'] || !$form_state['values']['auth_url']){
+			form_set_error('form', t('All Fields are Required to make Authentication Requests to Server'));	
+		    }
+		}		
+	if($form_state['values']['op'] == 'OAuth Access Token Call'){
+		if(!$form_state['values']['access_url']){
+			form_set_error('form', t('Please fill Access endpoint URL (eg. http://yourdrupalsite.com/?q=oauth/access)'));	
+		    }
+		}
 	if($form_state['values']['op'] == 'Back To Request Token Page'){
 		$_SESSION['oauth']['operation'] = '';	
 		$_SESSION['oauth']['key'] = '';
     	$_SESSION['oauth']['key_secret'] = '';
     	$_SESSION['oauth']['oauth_token'] = '';
     	$_SESSION['oauth']['oauth_token_secret'] = ''; 
-	}
+    	$_SESSION['oauth']['oauth_access_token'] = '';
+    	$_SESSION['oauth']['oauth_access_token_secret'] = '';
+    	$_SESSION['oauth']['oauth_signature_method'] = '';
+    	return;
+	}				
+}
+
+function oauth_request_call_submit($form, &$form_state){
 	
-    
+	$key = $form_state['values']['consumer_key'];
+	$secret = $form_state['values']['consumer_secret'];
+	$request_url = $form_state['values']['request_url'];
+	global $user;
+	// signature method declarations
+	$plaintext_method = new OAuthSignatureMethod_PLAINTEXT();
+	$hmac_method = new OAuthSignatureMethod_HMAC_SHA1();
+	$rsa_method = new TestOAuthSignatureMethod_RSA_SHA1();
+	
+	if(!$_SESSION['oauth']['oauth_signature_method']){
+		if($form_state['values']['sig_method'] == 0){
+	  	$user_sig_method = 'HMAC-SHA1';	
+	  	$_SESSION['oauth']['oauth_signature_method'] = 'HMAC-SHA1';
+	  		}elseif($form_state['values']['sig_method'] == 1){
+	  			$user_sig_method = 'PLAINTEXT';	
+	  			$_SESSION['oauth']['oauth_signature_method'] = 'PLAINTEXT';
+		  	}elseif($form_state['values']['sig_method'] == 2){
+	  			$user_sig_method = 'RSA-SHA1';	
+	  			$_SESSION['oauth']['oauth_signature_method'] = 'RSA-SHA1';
+		  }
+	 } 
+	 if($_SESSION['oauth']['oauth_signature_method'] == 'HMAC-SHA1'){
+	  		$sig_method = $hmac_method;
+	  	}else if($_SESSION['oauth']['oauth_signature_method'] == 'PLAINTEXT'){
+	  			$sig_method = $plaintext_method;
+	  		}else if($_SESSION['oauth']['oauth_signature_method'] == 'RSA-SHA1'){
+	  				$sig_method = $rsa_method;
+		}
+	$test_token = NULL;
+	$token = $form_state['values']['oauth_token'];
+    $token_secret = $form_state['values']['oauth_token_secret'];
+   	$test_consumer = new OAuthConsumer($key, $secret, NULL);
+	    
     if($form_state['values']['op'] == 'OAuth Authentication Call'){
     	
     	$_SESSION['oauth']['key'] = $form_state['values']['consumer_key'];
         $_SESSION['oauth']['key_secret'] = $form_state['values']['consumer_secret'];
         $_SESSION['oauth']['oauth_token'] = $token;
     	$_SESSION['oauth']['oauth_token_secret'] = $token_secret; 
-    	$callback_url = "http://localhost/sb3/?q=admin/oauth/services";
     	$test_token = new OAuthConsumer($token, $token_secret, $callback_url);
-    	//drupal_set_message('<pre>'. print_r($test_token, TRUE) .'</pre>');
     	$test_consumer = new OAuthConsumer($form_state['values']['consumer_key'], $form_state['values']['consumer_secret'], $callback_url);
     	$parsed = parse_url($form_state['values']['auth_url']);
   		$params = array();
   		parse_str($parsed['query'], $params);
-
-    	//drupal_set_message('<pre>'. print_r($test_consumer1, TRUE) .'</pre>');
     	$req_auth = OAuthRequest::from_consumer_and_token($test_consumer, $test_token, "GET", $form_state['values']['auth_url'], $params);
 		$req_auth->sign_request($sig_method, $test_consumer,$test_token);
 		 
     	$form_state['rebuild'] = TRUE;
     	$_SESSION['oauth']['operation'] = 'access';
+    	
     	$domain = $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
     	$callback_url = 'http://'.$domain;
 		  	
@@ -649,12 +711,15 @@ function oauth_request_call_submit($form, &$form_state){
     		$parsed = parse_url($form_state['values']['access_url']);
   			$params = array();
   			parse_str($parsed['query'], $params);
-
   			$acc_req = OAuthRequest::from_consumer_and_token($test_consumer, $test_token, "GET", $form_state['values']['access_url'], $params);
   			$acc_req->sign_request($sig_method, $test_consumer, $test_token);	
     		$result_access = drupal_http_request($acc_req, $headers = array(), $method = 'GET', $data = NULL, $retry = 3);
-    		drupal_set_message('<pre>'. print_r($result_access->data, TRUE) .'</pre>');
-    		//drupal_redirect_form($form, $acc_req);
+    		parse_str($result_access->data);
+    		$_SESSION['oauth']['oauth_access_token'] = $oauth_token;
+    		$_SESSION['oauth']['oauth_access_token_secret'] = $oauth_token_secret;
+    		drupal_set_message('<pre>'. print_r("oauth_access_token  $oauth_token", TRUE) .'</pre>');
+    		drupal_set_message('<pre>'. print_r("oauth_access_token_secret  $oauth_token_secret", TRUE) .'</pre>');
+    		drupal_redirect_form($form, 'admin/build/services');
     	}
     if($form_state['values']['op'] == 'Request Token Call'){
     $parsed = parse_url($request_url);
@@ -663,11 +728,13 @@ function oauth_request_call_submit($form, &$form_state){
     $req_req = OAuthRequest::from_consumer_and_token($test_consumer, NULL, "GET", $request_url, $params);
     $req_req->sign_request($sig_method, $test_consumer, NULL);
     $result_request = drupal_http_request($req_req, $headers = array(), $method = 'GET', $data = NULL, $retry = 3);
-    drupal_set_message('<pre>'. print_r($result_request->data, TRUE) .'</pre>');
+    parse_str($result_request->data);
+    drupal_set_message('<pre>'. print_r("oauth_token  $oauth_token", TRUE) .'</pre>');
+    drupal_set_message('<pre>'.print_r("oauth_token_secret  $oauth_token_secret", TRUE ).'</pre>');
     $form_state['rebuild'] = TRUE;
-    $form_state['data'] =  $result_request;
+    $form_state['data']['oauth_token'] =  $oauth_token;
+    $form_state['data']['oauth_token_secret'] = $oauth_token_secret;
     $_SESSION['oauth']['operation'] = 'auth';
  }
-    
-
+   
 }

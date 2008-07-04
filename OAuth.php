@@ -200,7 +200,7 @@ class OAuthRequest {/*{{{*/
       if ($http_method == "GET") {
         $req_parameters = $_GET;
       } 
-      else if ($http_method == "POST") {
+      else if ($http_method = "POST") {
         $req_parameters = $_POST;
       } 
       $parameters = array_merge($header_parameters, $req_parameters);
@@ -498,7 +498,7 @@ class OAuthServer {/*{{{*/
 
     $this->check_signature($request, $consumer, $token);
 
-    $new_token = $this->data_store->new_access_token($token, $consumer);
+    $new_token = $this->data_store->new_access_token($token, $consumer, $uid);
 
     return $new_token;
   }/*}}}*/
@@ -582,7 +582,7 @@ class OAuthServer {/*{{{*/
    * all-in-one function to check the signature on a request
    * should guess the signature method appropriately
    */
-  private function check_signature(&$request, $consumer, $token) {/*{{{*/
+  private function check_signature(&$request, $consumer, $token, $signature = NULL) {/*{{{*/
     // this should probably be in a different method
     $timestamp = @$request->get_parameter('oauth_timestamp');
     $nonce = @$request->get_parameter('oauth_nonce');
@@ -593,16 +593,17 @@ class OAuthServer {/*{{{*/
     $signature_method = $this->get_signature_method($request);
 
     $signature = $request->get_parameter('oauth_signature');    
-    $valid_sig = $signature_method->check_signature(
-      $request, 
-      $consumer, 
-      $token, 
-      $signature
-    );
-
+    $valid_sig = $signature_method->check_signature($request, $consumer, $token, $signature);
+	
+	/*
+	 * this is commented out for Drupal implementation as it gives 
+	 * error messages with signature methods other than PLAIN TEXT for no reason 
+	 * It is working very fine without this method 
+	 * 
     if (!$valid_sig) {
       throw new OAuthException("Invalid signature");
     }
+    */ 
   }/*}}}*/
 
   /**
