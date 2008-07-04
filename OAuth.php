@@ -200,7 +200,7 @@ class OAuthRequest {/*{{{*/
       if ($http_method == "GET") {
         $req_parameters = $_GET;
       } 
-      else if ($http_method = "POST") {
+      else if ($http_method == "POST") {
         $req_parameters = $_POST;
       } 
       $parameters = array_merge($header_parameters, $req_parameters);
@@ -498,7 +498,7 @@ class OAuthServer {/*{{{*/
 
     $this->check_signature($request, $consumer, $token);
 
-    $new_token = $this->data_store->new_access_token($token, $consumer, $uid);
+    $new_token = $this->data_store->new_access_token($token, $consumer);
 
     return $new_token;
   }/*}}}*/

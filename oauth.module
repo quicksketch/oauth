@@ -530,6 +530,7 @@ function oauth_request_call($form_state){
 			'#type' => 'radios',
 			'#options' => array( 0 => t('HMAC-SHA1'), 1 => t('PLAINTEXT'), 2 => t('RSA-SHA1')),
 			'#weight' => 9,
+			'#default_value' => 0,
 		);
 
 		$form['indicator']['request_call'] = array(
@@ -622,7 +623,7 @@ function oauth_request_call($form_state){
 function oauth_request_call_validate($form, &$form_state){
 	
 	if($form_state['values']['op'] == 'Request Token Call'){
-		if(!$form_state['values']['consumer_key'] || !$form_state['values']['consumer_secret'] || !$form_state['values']['request_url'] || !$form_state['values']['sig_method']){
+		if(!$form_state['values']['consumer_key'] || !$form_state['values']['consumer_secret'] || !$form_state['values']['request_url'] || !isset($form_state['values']['sig_method'])){
 			form_set_error('form', t('All Fields are Required to produce Request Tokens'));	
 		}
 	}		
