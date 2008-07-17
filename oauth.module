@@ -2,19 +2,13 @@
 
 require_once "OAuth.php";
 require_once "common.inc.php";
+//require_once "oauth_admin_keys.inc"
 /**
  * Implementation of hook_menu
  */
 function oauth_menu() {
   $items = array();	
-  $items['admin/build/oauth'] = array(
-    'title' => t('Test OAuth'),
-    'description' => t('Test OAuth calls to server'),
-    'page callback' => 'oauth_test_calls',
-  //  'access callback' => 'oauth_test_calls',
-    'access arguments' => array('consume provided services'),
-    'weight' => 10  
-  );
+    
   $items['oauth/request'] = array(
     'title' => t('Request token'), 
     'page callback' => 'oauth_request_token',
@@ -35,19 +29,78 @@ function oauth_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
-
+  $items['admin/build/oauth'] = array(
+    'title' => t('OAuth'),
+    'description' => t('Test OAuth calls to server'),
+    'page callback' => 'oauth_test_calls',
+  //  'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('consume provided services'),
+    'weight' => -10  
+  );
+  
+  $items['admin/build/oauth/testoauth'] = array(
+  	'title' => t('Test OAuth'),
+  	'description' => t('Test your oauth server implementation from this test browser'),
+  	'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+   
+  //keys registration for external sites
+  $items['admin/build/oauth/registered'] = array(
+    'title' => 'Registered Websites/Services',
+    'description' => 'Manage registered websites to use oauth.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'oauth_admin_keys_list',
+    //'access callback' => 'variable_get',
+    'access arguments' => array('admin registered websites'),
+    'file' => 'oauth_admin_keys.inc',
+  );
+  
+  $items['admin/build/oauth/registered/list'] = array(
+    'title' => 'Registered Sites',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => array('access consumer view'),
+    'weight' => -10,
+  );
+   
+  $items['admin/build/oauth/registered/register'] = array(
+    'title' => 'Register website',
+    'description' => t('Register new website/service here.'.
+    'Before use of OAuth service on this Server you need to register your domain here'),
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('oauth_admin_keys_form'),
+    'access arguments' => array('register websites'),
+    'file' => 'oauth_admin_keys.inc',
+    'weight' => -5,
+  );
+  
+  $items['admin/build/oauth/registerd/edit'] = array(
+  	'title' => t('Edit Registered Site/Service'),
+  	'page callback' => 'oauth_admin_keys_list',
+  	'file' => 'oauth_admin_keys.inc',
+  );
   /**
    * @TODO Move the consumer settings to a separate tab.
    */
-  /*
-  $items['user/%user/services'] = array(
-    'title' => t('Consumer settings'), 
+  
+  $items['user/%user/oauth'] = array(
+    'title' => t('OAuth Tokens'), 
     'page callback' => 'oauth_consumer_view',
-    'access callback' => 'oauth_access_consumer_view',
+    'page arguments' => array('user', 1),
+    'access callback' => 'user_access',
+    'access arguments' => array('access consumer view'),
     'type' => MENU_LOCAL_TASK,
-    'weight' => 10
   );
-  */
+  /*
+  //delete a token on user's request
+  $items['oauth/delete'] = array(
+    'title' => t('Delete Access Token'), 
+    'page callback' => 'oauth_delete_token',
+    'access arguments' => array('access consumer view'),
+    'type' => MENU_CALLBACK,
+  );
+  */ 
   
   return $items;
 }
@@ -56,7 +109,7 @@ function oauth_menu() {
  * Implementation of hook_perm
  */
 function oauth_perm() {
-  return array("authorize external services", "consume provided services");
+  return array("authorize external services", "consume provided services", "register websites", "admin registered websites", "access consumer view");
 }
 
 /**
@@ -134,11 +187,15 @@ function _oauth_init_server() {
 /**
  * Generate a request token from the request
  */
-function oauth_request_token() {
-  $server = _oauth_init_server();
-  
-  // Remove the q variable from the query string, as it will break
-  // the signature validation.
+function oauth_request_token(){
+  $registered_domain = db_query("SELECT * FROM {oauth_registered_sites}");
+	
+  while($registered = db_fetch_object($registered_domain)){
+ 
+  if(stristr($_GET['application_url'], $registered->domain)){
+   $server = _oauth_init_server();
+   // Remove the q variable from the query string, as it will break
+   // the signature validation.
   $q = $_GET['q'];
   unset($_GET['q']);
 
@@ -146,15 +203,23 @@ function oauth_request_token() {
     $req = OAuthRequest::from_request();
     $token = $server->fetch_request_token($req);
     print $token;
+    die();
   } catch (OAuthException $e) {
     print($e->getMessage() . "\n<hr />\n");
+    
     print_r($req);
     die();
   }
-
   // Set the $_GET['q'] back to it's original value
   $_GET['q'] = $q;
-}
+ 
+  }
+    }
+	  if(!stristr($_GET['application_url'], $registered->domain)){
+	  	print_r('Your Domain is not registered with SERVER please visit  http://'.$_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'].'?q=admin/build/oauth/registered/register');
+	} 
+ }
+ 
 
 /**
  * Authorize a request token.
@@ -236,7 +301,6 @@ function oauth_grant_access() {
   '#title' => t('Select services'),
   '#type' => 'fieldset',  
  );
-  
     
  foreach ( $services as $service ){
   
@@ -442,7 +506,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   function new_request_token($consumer) {
   	$user_id = db_result(db_query("SELECT uid FROM {oauth_consumer} WHERE consumer_key='%s'", $consumer->key));
     $token = new OAuthToken(user_password(32), user_password(32));
-    db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'request', $token->key, $token->secret, $user_id);
+    db_query("INSERT INTO {oauth_token} (domain, consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', '%s', %d)", $_SERVER['HTTP_HOST'], $consumer->key, 'request', $token->key, $token->secret, $user_id);
     return $token;
   }
 /**
@@ -464,7 +528,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
         $token = new OAuthToken(user_password(32), user_password(32));
         $user_id = db_result(db_query("SELECT uid FROM {oauth_consumer} WHERE consumer_key = '%s'", $consumer->key));
         $session_id = db_result(db_query("SELECT sid FROM {sessions} WHERE uid=%d", $user_id));
-        db_query("INSERT INTO {oauth_token} (consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', %d)", $consumer->key, 'access', $token->key, $token->secret, $user_id);
+        db_query("INSERT INTO {oauth_token} (domain, consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', '%s', %d)", $_SERVER['HTTP_HOST'], $consumer->key, 'access', $token->key, $token->secret, $user_id);
 		db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
         db_query("UPDATE {oauth_services} SET token_key = '%s' WHERE session_id= '%s'", $token->key, $session_id);
         return $token;
@@ -473,6 +537,52 @@ class DrupalOAuthDataStore extends OAuthDataStore {
     return null;
   }
 }
+
+function oauth_consumer_view(){
+  $tokens = oauth_get_accesstokens();
+  $header = array(t('Domain Name'), t('Token'), array('data' => t('Operations'), 'colspan' => '2'));
+  $rows = array();
+  
+  foreach ($tokens as $domain => $key) {
+    $row = array();
+    
+    $row[] = $domain;
+    $row[] = $key->token_key;
+        
+    // Populate the operations field.
+    $operations = array();
+
+    // Set the edit column.
+    $operations[] = array('data' => l(t('delete'), 'admin/build/oauth/registered/'. $key->token_key));
+  
+    foreach ($operations as $operation) {
+      $operation['class'] = $class;
+      $row[] = $operation;
+    }
+    $rows[] = $row;
+  }
+
+  if (empty($rows)) {
+    $rows[] = array(array('data' => t('No access tokens found.'), 'colspan' => '5', 'class' => 'message'));
+  }
+	return theme('table', $header, $rows);
+}
+
+//return object with token, key, type information
+
+function oauth_get_accesstokens(){
+	global $user;
+	static $tokens;
+  if (!$tokens) {
+    $tokens = array();
+    $result = db_query("SELECT * FROM {oauth_token} WHERE type='access' AND uid=%d", $user->uid);
+    while ($token = db_fetch_object($result)) {
+      $tokens[$token->domain] = $token;
+    }
+  }
+  return $tokens;
+}
+
 
 /**
  * 
@@ -512,7 +622,7 @@ function oauth_request_call($form_state){
 			'#type' => 'textfield',
 		);
 		$form['indicator']['endpoints'] = array(
-			'#title' => t('end points of testing server'),
+			'#title' => t('End points of testing server'),
 			'#type' => 'fieldset',
 		);
 		$form['indicator']['endpoints']['request_url'] = array(
@@ -531,6 +641,24 @@ function oauth_request_call($form_state){
 			'#options' => array( 0 => t('HMAC-SHA1'), 1 => t('PLAINTEXT'), 2 => t('RSA-SHA1')),
 			'#weight' => 9,
 			'#default_value' => 0,
+		);
+		$form['indicator']['application'] = array(
+			'#title' => t('Application Settings'),
+			'#type' => 'fieldset',
+		);
+		$form['indicator']['application']['application_title'] = array(
+			'#title' => t('Application Title'),
+			'#description' => t('Application which is making calls to OAuth Server'),
+			'#type' => 'textfield',
+			'#default_value' => t('My test oauth application'),
+			'#weight' => 7,
+		);
+		$form['indicator']['application']['application_url'] = array(
+			'#title' => t('Application URL'),
+			'#description' => t('URL/PATH of application making OAuth requests (domain name!!)'),
+			'#type' => 'textfield',
+			'#default_value' => 'http://'.$_SERVER['SERVER_NAME'],
+			'#weight' => 6,
 		);
 
 		$form['indicator']['request_call'] = array(
@@ -726,16 +854,25 @@ function oauth_request_call_submit($form, &$form_state){
     $parsed = parse_url($request_url);
     $params = array();
     parse_str($parsed['query'], $params);
+    $params['application_title'] = $form_state['values']['application_title'];
+    $params['application_url'] = $form_state['values']['application_url'];
     $req_req = OAuthRequest::from_consumer_and_token($test_consumer, NULL, "GET", $request_url, $params);
     $req_req->sign_request($sig_method, $test_consumer, NULL);
     $result_request = drupal_http_request($req_req, $headers = array(), $method = 'GET', $data = NULL, $retry = 3);
     parse_str($result_request->data);
+    if(($oauth_token != '') && ($oauth_token_secret != '')){
     drupal_set_message('<pre>'. print_r("oauth_token  $oauth_token", TRUE) .'</pre>');
     drupal_set_message('<pre>'.print_r("oauth_token_secret  $oauth_token_secret", TRUE ).'</pre>');
-    $form_state['rebuild'] = TRUE;
+	
+	$form_state['rebuild'] = TRUE;
     $form_state['data']['oauth_token'] =  $oauth_token;
     $form_state['data']['oauth_token_secret'] = $oauth_token_secret;
-    $_SESSION['oauth']['operation'] = 'auth';
+    $_SESSION['oauth']['operation'] = 'auth'; 
+	 }else{
+	 	drupal_set_message('<pre>'. print_r($result_request->data, TRUE) .'</pre>');
+	 	}
+	 
+    
  }
    
 }

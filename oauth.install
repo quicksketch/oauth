@@ -57,6 +57,11 @@ function oauth_schema() {
         'not null' => TRUE,
         'default' => 0
       ),
+      'domain' => array(
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE
+      ),
       'consumer_key' => array(
         'type' => 'varchar',
         'length' => 32,
@@ -127,6 +132,33 @@ function oauth_schema() {
       'timestamp' => array('timestamp'),
       ),
  );
+   $schema['oauth_registered_sites'] = array(
+    'description' => 'Stores all external websites registered to use OAuth on server.',
+    'fields' => array(
+      'kid' => array(
+        'description' => 'The website key ID.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'title' => array(
+        'description' => 'The title of the external website/service.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+      'domain' => array(
+        'description' => 'The domain of the website/service.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),
+    ),
+    'primary key' => array('kid')
+  );
   
   return $schema;
 }
