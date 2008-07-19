@@ -160,6 +160,64 @@ function oauth_schema() {
     'primary key' => array('kid')
   );
   
+  $schema['oauth_cool_auth'] = array(
+    'description' => t('Stores records for cool auth API'),
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE
+      ),
+      'application_key' => array(
+        'type' => 'varchar',
+        'length' => 32, 
+        'not null' => TRUE
+      ),
+      'application_secret' => array(
+        'type' => 'varchar',
+        'length' => 32, 
+        'not null' => TRUE
+      ),
+      'application_title' => array(
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE
+      ),
+      'application_description' => array(
+        'type' => 'varchar',
+        'length' => 1024,
+        'not null' => TRUE
+      ),
+      'application_notes' => array(
+        'type' => 'varchar',
+        'length' => 2048,
+        'not null' => TRUE
+      ),
+      'application_url' => array(
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE
+      ),
+      'application_type' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE
+      ),
+      'application_callback_url' => array(
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE
+      ),
+    ),
+   'primary key' => array('uid'),
+   'unique keys' => array( 
+     'uid' => array('uid')
+   ),
+   'indexes' => array(
+      'application_key' => array('application_key'),
+    ),
+  );
+  
   return $schema;
 }
 

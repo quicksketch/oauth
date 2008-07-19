@@ -2,6 +2,7 @@
 
 require_once "OAuth.php";
 require_once "common.inc.php";
+require_once "cool_auth_system.inc";
 //require_once "oauth_admin_keys.inc"
 /**
  * Implementation of hook_menu
@@ -34,43 +35,45 @@ function oauth_menu() {
     'description' => t('Test OAuth calls to server'),
     'page callback' => 'oauth_test_calls',
   //  'type' => MENU_LOCAL_TASK,
-    'access arguments' => array('consume provided services'),
+    'access arguments' => array('administer oauth'),
     'weight' => -10  
   );
   
   $items['admin/build/oauth/testoauth'] = array(
-  	'title' => t('Test OAuth'),
-  	'description' => t('Test your oauth server implementation from this test browser'),
-  	'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -10,
+      'title' => t('Test OAuth'),
+      'description' => t('Test your oauth server implementation from this test browser'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+      'access arguments' => array('administer oauth'),
   );
    
   //keys registration for external sites
   $items['admin/build/oauth/registered'] = array(
-    'title' => 'Registered Websites/Services',
+    'title' => 'Registered Applications',
     'description' => 'Manage registered websites to use oauth.',
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'oauth_admin_keys_list',
     //'access callback' => 'variable_get',
-    'access arguments' => array('admin registered websites'),
+    'access arguments' => array('administer oauth'),
     'file' => 'oauth_admin_keys.inc',
   );
   
   $items['admin/build/oauth/registered/list'] = array(
-    'title' => 'Registered Sites',
+    'title' => 'Registered Applications',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'access arguments' => array('access consumer view'),
     'weight' => -10,
+    'access arguments' => array('administer oauth'),
   );
    
   $items['admin/build/oauth/registered/register'] = array(
-    'title' => 'Register website',
+    'title' => 'ADD/EDIT Application',
     'description' => t('Register new website/service here.'.
     'Before use of OAuth service on this Server you need to register your domain here'),
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('oauth_admin_keys_form'),
-    'access arguments' => array('register websites'),
+    'page arguments' => array('oauth_cool_auth_admin_form'),
+    'access arguments' => array('administer oauth'),
     'file' => 'oauth_admin_keys.inc',
     'weight' => -5,
   );
@@ -79,6 +82,7 @@ function oauth_menu() {
   	'title' => t('Edit Registered Site/Service'),
   	'page callback' => 'oauth_admin_keys_list',
   	'file' => 'oauth_admin_keys.inc',
+        'access arguments' => array('administer oauth'),
   );
   /**
    * @TODO Move the consumer settings to a separate tab.
@@ -89,7 +93,16 @@ function oauth_menu() {
     'page callback' => 'oauth_consumer_view',
     'page arguments' => array('user', 1),
     'access callback' => 'user_access',
-    'access arguments' => array('access consumer view'),
+    'access arguments' => array('revoke access tokens'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['user/%user/testoauth'] = array(
+    'title' => t('Test OAuth from your account'), 
+    'page callback' => 'oauth_test_calls',
+    'page arguments' => array('user', 1),
+    'access callback' => 'user_access',
+    'access arguments' => array('make test calls'),
     'type' => MENU_LOCAL_TASK,
   );
   /*
@@ -100,7 +113,23 @@ function oauth_menu() {
     'access arguments' => array('access consumer view'),
     'type' => MENU_CALLBACK,
   );
-  */ 
+  */
+  /*
+   * @todo Make a tab on user's page to associate
+   * an application key + application secret with their account
+   * to activate "cool auth system"
+   * this key+secret will be required to make an application access over 
+   * Drupal server via oauth
+   */
+   $items['user/%user/coolauth'] = array(
+    'title' => t('Cool Auth'), 
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cool_auth_system_admin_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access cool auth'),
+    'type' => MENU_LOCAL_TASK,    
+  );
+   
   
   return $items;
 }
@@ -109,7 +138,7 @@ function oauth_menu() {
  * Implementation of hook_perm
  */
 function oauth_perm() {
-  return array("authorize external services", "consume provided services", "register websites", "admin registered websites", "access consumer view");
+  return array("authorize external services", "consume provided services", "access cool auth", "administer oauth", "revoke access tokens", "make test calls");
 }
 
 /**
@@ -187,12 +216,16 @@ function _oauth_init_server() {
 /**
  * Generate a request token from the request
  */
-function oauth_request_token(){
-  $registered_domain = db_query("SELECT * FROM {oauth_registered_sites}");
-	
-  while($registered = db_fetch_object($registered_domain)){
- 
-  if(stristr($_GET['application_url'], $registered->domain)){
+function oauth_request_token(){  
+  $application_key = $_GET['application_key'];
+  $application_secret = db_result(db_query("SELECT application_secret FROM {oauth_cool_auth} WHERE application_key=%d", $application_key));
+  $required_hash = md5($application_secret.$_GET['oauth_nonce']);
+  //print_r($application_key);
+  if(!$application_secret){
+    print_r("YOUR APPLICATION IS NOT REGISTERED WITH US - PLEASE REGISTER FIRST TO ACCESS API");
+    } 
+  
+  if($_GET['application_sig'] == $required_hash){
    $server = _oauth_init_server();
    // Remove the q variable from the query string, as it will break
    // the signature validation.
@@ -211,13 +244,8 @@ function oauth_request_token(){
     die();
   }
   // Set the $_GET['q'] back to it's original value
-  $_GET['q'] = $q;
- 
-  }
-    }
-	  if(!stristr($_GET['application_url'], $registered->domain)){
-	  	print_r('Your Domain is not registered with SERVER please visit  http://'.$_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'].'?q=admin/build/oauth/registered/register');
-	} 
+  $_GET['q'] = $q; 
+  }	  
  }
  
 
@@ -646,18 +674,16 @@ function oauth_request_call($form_state){
 			'#title' => t('Application Settings'),
 			'#type' => 'fieldset',
 		);
-		$form['indicator']['application']['application_title'] = array(
-			'#title' => t('Application Title'),
-			'#description' => t('Application which is making calls to OAuth Server'),
+		$form['indicator']['application']['application_key'] = array(
+			'#title' => t('COOL AUTH API KEY'),
+			'#description' => t('COOL AUTH API key - you get it after applying for cool auth access on server'),
 			'#type' => 'textfield',
-			'#default_value' => t('My test oauth application'),
-			'#weight' => 7,
+			'#weight' => 4,
 		);
-		$form['indicator']['application']['application_url'] = array(
-			'#title' => t('Application URL'),
-			'#description' => t('URL/PATH of application making OAuth requests (domain name!!)'),
+		$form['indicator']['application']['application_secret'] = array(
+			'#title' => t('COOL AUTH API SECRET'),
+			'#description' => t('COOL AUTH APIshared secret - you get it after applying for cool auth access on server'),
 			'#type' => 'textfield',
-			'#default_value' => 'http://'.$_SERVER['SERVER_NAME'],
 			'#weight' => 6,
 		);
 
@@ -850,21 +876,23 @@ function oauth_request_call_submit($form, &$form_state){
     		drupal_set_message('<pre>'. print_r("oauth_access_token_secret  $oauth_token_secret", TRUE) .'</pre>');
     		drupal_redirect_form($form, 'admin/build/services');
     	}
-    if($form_state['values']['op'] == 'Request Token Call'){
+  if($form_state['values']['op'] == 'Request Token Call'){
     $parsed = parse_url($request_url);
     $params = array();
     parse_str($parsed['query'], $params);
-    $params['application_title'] = $form_state['values']['application_title'];
-    $params['application_url'] = $form_state['values']['application_url'];
+    $params['application_key'] = $form_state['values']['application_key'];
+    $params['application_secret'] = $form_state['values']['application_secret'];
+    //$params['application_url'] = $form_state['values']['application_url'];
     $req_req = OAuthRequest::from_consumer_and_token($test_consumer, NULL, "GET", $request_url, $params);
     $req_req->sign_request($sig_method, $test_consumer, NULL);
+    //drupal_set_message('<pre>'. print_r($req_req, TRUE) .'</pre>');
     $result_request = drupal_http_request($req_req, $headers = array(), $method = 'GET', $data = NULL, $retry = 3);
     parse_str($result_request->data);
     if(($oauth_token != '') && ($oauth_token_secret != '')){
     drupal_set_message('<pre>'. print_r("oauth_token  $oauth_token", TRUE) .'</pre>');
     drupal_set_message('<pre>'.print_r("oauth_token_secret  $oauth_token_secret", TRUE ).'</pre>');
 	
-	$form_state['rebuild'] = TRUE;
+    $form_state['rebuild'] = TRUE;
     $form_state['data']['oauth_token'] =  $oauth_token;
     $form_state['data']['oauth_token_secret'] = $oauth_token_secret;
     $_SESSION['oauth']['operation'] = 'auth'; 

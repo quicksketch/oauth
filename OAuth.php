@@ -224,6 +224,10 @@ class OAuthRequest {/*{{{*/
                       "oauth_nonce" => OAuthRequest::generate_nonce(),
                       "oauth_timestamp" => OAuthRequest::generate_timestamp(),
                       "oauth_consumer_key" => $consumer->key);
+    if($parameters[application_secret]){
+      $parameters['application_sig'] = md5($parameters['application_secret'].$defaults['oauth_nonce']);
+      $parameters[application_secret] = '';
+    }
     $parameters = array_merge($defaults, $parameters);
 
     if ($token) {
