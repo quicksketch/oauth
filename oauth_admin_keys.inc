@@ -70,11 +70,7 @@ function oauth_get_keys() {
 
 function oauth_cool_auth_admin_form($form_state) {
    
-   if($form_state['storage']['confirm'] == ''){
-    $form['welcome'] = array(
-	'#title' => '<h3>'.t('Please enter uid corresponding to which you wanna ADD or EDIT cool auth API values').'</h3>',
-	'#type' => 'item',
-    ); 
+   if($form_state['storage']['confirm'] == ''){    
     $form['uid'] = array(
 	'#title' => t('UserID'),
 	'#description' => t('uid corresponding to whome you ant to register an cool auth API key'),
@@ -90,28 +86,33 @@ function oauth_cool_auth_admin_form($form_state) {
    }
    
    if($form_state['storage']['confirm'] == 1){
-    $default_values = db_fetch_array(db_query("SELECT * from {oauth_cool_auth} WHERE uid=%d", $form_state['storage']['uid']));
     
+    $default_values = db_fetch_array(db_query("SELECT * from {oauth_cool_auth} WHERE uid=%d", $form_state['storage']['uid']));
+    if($default_values == ''){
+       $default_values['application_type'] = 0;
+    }
     $form['application_title'] = array(
         '#title' => t('TITLE'),
-        '#description' => t('Title for application you are registering api key'),
+        '#description' => t('Title for application.'),
         '#type' => 'textfield',
         '#default_value' => $default_values['application_title'],
     );
     $form['application_description'] = array(
         '#title' => t('Description'),
-        '#description' => t('Description about your application'),
+        '#description' => t('Details about your application.'),
         '#type' => 'textarea',
-        '#default_value' => $default_values['application_description'],        
+        '#default_value' => $default_values['application_description'],
+	'#weight' => .5,
     );
     $form['application_notes'] = array(
         '#title' => t('Notes'),
         '#type' => 'textarea',
-        '#default_value' => $default_values['application_notes'],        
+        '#default_value' => $default_values['application_notes'],
+	'#weight' => 1,
     );
     $form['application_url'] = array(
         '#title' => t('Application URL'),
-        '#description' => t('URL of your application which is making access to server'), 
+        '#description' => t('URL of your application which is making access to server.'), 
         '#type' => 'textfield',
         '#default_value' => $default_values['application_url'],
     );
@@ -132,6 +133,7 @@ function oauth_cool_auth_admin_form($form_state) {
         '#title' => t('SAVE APPLICATION'),
         '#value' => t('SAVE APPLICATION'),
         '#type' => 'submit',
+	'#weight' => 2,
     );
     return $form;
    }
@@ -144,7 +146,15 @@ function oauth_cool_auth_admin_form_validate($form, &$form_state){
       }elseif(user_load($form_state['values']['uid']) == ''){
 	  form_set_error('form', t('USER does not exist!!'));
        }      
-     } 
+     }
+     if($form_state['values']['op'] == 'SAVE APPLICATION'){
+      if($form_state['values']['application_title'] == ''){
+	  form_set_error('form', t('Please fill a valid application-title.'));
+      }elseif(!check_url($form_state['values']['application_url'])){
+          form_set_error('form', t('Please fill a valid url for application.')); 
+      }
+      
+     }
 }
 
 function oauth_cool_auth_admin_form_submit($form, &$form_state) {
@@ -160,7 +170,7 @@ function oauth_cool_auth_admin_form_submit($form, &$form_state) {
    return;
   }else{
    $form_state['storage']['confirm'] = 1;
-   $form_state['storage']['uid'] = $form_state['values']['uid'];   
+   $form_state['storage']['uid'] = $form_state['values']['uid'];  
    return;
   }
  }
@@ -182,7 +192,25 @@ function oauth_cool_auth_admin_form_submit($form, &$form_state) {
   return 'admin/build/oauth/registered';
 }
 
+function oauth_admin_keys_save($form_state) {
+  
+  $is_existing = FALSE;
+  //$key['uid'] = !empty($key['uid']) ? $key['uid'] : md5(uniqid(mt_rand(), true));
+  $is_existing =  db_result(db_query("SELECT application_key FROM {oauth_cool_auth} WHERE uid = %d", $form_state['values']['uid']));
 
+  if ($is_existing) {
+    db_query("UPDATE {oauth_cool_auth} SET application_title='%s', application_description='%s', application_notes='%s', application_url='%s', application_type=%d, application_callback_url='%s' WHERE uid=%d ", $form_state['values']['application_title'], $form_state['values']['application_description'], $form_state['values']['application_notes'], $form_state['values']['application_url'], $form_state['values']['application_type'], $form_state['values']['application_callback_url'], $form_state['storage']['uid'] );
+    return SAVED_UPDATED;
+  }
+  else {
+    db_query("INSERT INTO {oauth_registered_sites} (kid, title, domain) VALUES ('%s', '%s', '%s')", $key['kid'], $key['title'], $key['domain']);
+    return SAVED_NEW;
+  }
+}
+
+function oauth_admin_keys_delete($kid) {
+  db_query("DELETE FROM {oauth_registered_sites} WHERE kid = '%s'", $kid);
+}
 
 function oauth_admin_keys_delete_confirm($key) {
   $form['kid'] = array('#type' => 'value', '#value' => $key->kid);

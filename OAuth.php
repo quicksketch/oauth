@@ -473,7 +473,7 @@ class OAuthServer {/*{{{*/
    * process a request_token request
    * returns the request token on success
    */
-  public function fetch_request_token(&$request) {/*{{{*/
+  public function fetch_request_token(&$request, $application_key = NULL) {/*{{{*/
     $this->get_version($request);
 
     $consumer = $this->get_consumer($request);
@@ -483,7 +483,7 @@ class OAuthServer {/*{{{*/
 
     $this->check_signature($request, $consumer, $token);
 
-    $new_token = $this->data_store->new_request_token($consumer);
+    $new_token = $this->data_store->new_request_token($consumer, $application_key);
 
     return $new_token;
   }/*}}}*/

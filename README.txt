@@ -1,6 +1,6 @@
 // $Id$
 
-A best practices implementation of OAuth for Drupal. What is OAuth? "An open protocol to allow secure API authentication in a simple and standard method from desktop and web applications."If you've ever used Flickr to connect with other systems, or added a Facebook app that asks you what permissions you want to give, both are examples of securely identifying yourself between systems without you physically having to enter a password every time.A very simplistic explanation is that OpenID is like your car key: you have to be at the web page / service to log in. OAuth is like a valet key, that you can hand to a website to operate on your behalf, even when you're not there.
+A best practices implementation of OAuth for Drupal. What is OAuth? "An open protocol to allow secure API authentication in a simple and standard method from desktop and web applications."If you've ever used Flickr to connect with other systems, or added a Facebook app that asks you what permissions you want to give, both are examples of securely identifying yourself between systems without you physically having to enter a password every time.A very simplistic explanation is that OpenID is like your car key: you have to be at the web page / service to log in. OAuth is like a valet key, that you can hand to a website to operate on your behalf, even when you're not there.
 
 * Community Site: http://oauth.net/
 * Wikipedia entry: http://en.wikipedia.org/wiki/OAuth
