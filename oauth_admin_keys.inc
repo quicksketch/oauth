@@ -182,9 +182,10 @@ function oauth_cool_auth_admin_form_submit($form, &$form_state) {
         $application_key = md5(uniqid(mt_rand(), true));
         $application_secret = md5(uniqid(mt_rand(), true));
         db_query("INSERT INTO {oauth_cool_auth} (uid, application_key, application_secret, application_title, application_description, application_notes, application_url, application_type, application_callback_url) VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s')", $form_state['storage']['uid'], $application_key, $application_secret, $form_state['values']['application_title'], $form_state['values']['application_description'], $form_state['values']['application_notes'], $form_state['values']['application_url'], $form_state['values']['application_type'], $form_state['values']['application_callback_url']);
-        
+        drupal_goto($path='admin/build/oauth/registered'); 
     }else{        
         db_query("UPDATE {oauth_cool_auth} SET application_title='%s', application_description='%s', application_notes='%s', application_url='%s', application_type=%d, application_callback_url='%s' WHERE uid=%d ", $form_state['values']['application_title'], $form_state['values']['application_description'], $form_state['values']['application_notes'], $form_state['values']['application_url'], $form_state['values']['application_type'], $form_state['values']['application_callback_url'], $form_state['storage']['uid'] );
+	drupal_goto($path='admin/build/oauth/registered'); 
     }
     
    }

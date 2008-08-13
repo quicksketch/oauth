@@ -1,5 +1,5 @@
 <?php
-
+// $Id$
 /**
  * @file
  * oauth.module
@@ -10,8 +10,12 @@
  * This also includes a test browser to make test OAuth calls to any server for testing your OAuth installation
  * This testing browser is available on both user and Admin's end
  * 
- * Developer - Sumit Kataria, A student of google summer of code-2008 under Drupal working on OAuth and its integration with Drupal and its Services API  
+ * Developer - Sumit Kataria, A student of google summer of code-2008 under Drupal working on OAuth and its integration with Drupal and Services API  
  *
+ * A working demo of AOuth with services is on his website http://sumitk.net/oauth
+ *
+ * Services API is an interface which makes other web/desktop/mobile applications to communicate with drupal with many services
+ * For more details visit services handbook on  http://drupal.org
  */
 
 
@@ -24,15 +28,15 @@ require_once "cool_auth_system.inc";
  * Implementation of hook_help().
  */
 function oauth_help($path, $arg) {
-  switch ($path) {
+  switch ($path) {    
     case 'user/%/coolauth':
-      $output = '<p>'.t('To register your application for COOL AUTH system (which enables you to use OAuth on this site and make you use of sites resources). <br/>It is like any other data API eg. Flickr, youtube... <br/> Whole <a href = "http://drupal.org/node"> COOL AUTH API</a> documentation is here.<br/><br/>Clicking this button will enable use of cool auth from your account.').'</p>';
+      $output = '<p>' . t('To register your application for COOL AUTH system (which enables you to use OAuth on this site and make you use of sites resources). <br/>It is like any other data API eg. Flickr, youtube... <br/> Whole <a href = "http://drupal.org/node"> COOL AUTH API</a> documentation is here.<br/><br/>Clicking this button will enable use of cool auth from your account.').'</p>';
       return $output;
     case 'oauth/auth':
-      $output = '<p>'.t('<div>Dear user you are giving access to this external application to get data from your account.<br/><strong><b> Please choose permissions from form below very carefully which you want this application to give access rights to.</b></strong><br/></div> If you want to delete the "issued access token" OR "revoke data access for your acc. for this application", please visit my accounts <br/>"OAuth Token" tab on this website and delete corresponding access token').'</p>';
+      $output = '<p>'.t('<div><b>Dear user you are giving access to this external application to <i>get data</i> from your <i>account</i></b>.<br/><strong><b> Please choose permissions very carefully for access rights of this application to your account.</b></strong><br/></div> If you want to delete the "issued access token" OR "revoke data access" corresponding to this application", please visit <i>my account</i> - "OAuth Token" tab on this website and delete corresponding <i><b>access token</b></i>') . '</p>';
       return $output;
     case 'admin/build/oauth':
-      $output = '<p>'.t('Purpose of this test browser is to <strong>TEST OAuth</strong> calls to this/your own server.</br>
+      $output = '<p>' . t('Purpose of this test browser is to <strong>TEST OAuth</strong> calls to this/your own server.</br>
 			<div><i><strong>To return Back to 1st step that is Request Token call - Please press "Back To Request Token Page" button at bottom of the page.</strong></i></div>
 			You may look at this @tutorial before proceeding forward. Whole OAuth and COOL AUTH API documentation is here http://drupal.org/node.<br/>
 			<div>OAuth authentication to get an <b><i>access token</i></b> to fetch data on users behalf is a <b><i>3 step process</i></b></div>.
@@ -61,8 +65,8 @@ function oauth_help($path, $arg) {
       $output = '<p>'. t('These are users/services which have registered for use of OAuth on your website, you can delete or edit these registered applications here') .'</p>';
 	return $output;
     case 'admin/build/oauth/registered/register':
-      $output .= '<p>'. t('Here you can edit OR add a new application(cool-auth registration) corresponding to UID of an already registered user.<br/>for eg. administrator got an UID=1 so you can edit admins cool-auth registered application settings by putting UserID=1') .'</p>';      return $output;
-      
+      $output .= '<p>'. t('Here you can edit OR add a new application(cool-auth registration) corresponding to UID of an already registered user.<br/>for eg. administrator got an UID=1 so you can edit admins cool-auth registered application settings by putting UserID=1') .'</p>';      
+      return $output;
     case 'admin/build/services/keys':
       return t('An API key is required to allow an application to access Drupal remotely.');
       
@@ -96,7 +100,7 @@ function oauth_menu() {
   );
   $items['admin/build/oauth'] = array(
     'title' => t('OAuth'),
-    'description' => t('Test OAuth calls to server'),
+    'description' => t('An open protocol to allow secure API authentication in a simple and standard method from desktop, web, and mobile applications.'),
     'page callback' => 'oauth_test_calls',
     'access arguments' => array('administer oauth'),
     'weight' => -10  
@@ -108,6 +112,16 @@ function oauth_menu() {
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
       'access arguments' => array('administer oauth'),
+  );
+  
+  // admin page settings
+  $items['admin/build/oauth/settings'] = array(
+  	  'title' => t('OAuth settings'),
+  	  'description' => t('oauth module administrator settings'),
+  	  'type' => MENU_LOCAL_TASK,
+  	  'access arguments' => array('administer oauth'),
+  	  'page callback' => 'drupal_get_form',
+  	  'page arguments' => array('oauth_admin_settings'),
   );
    
   //keys registration for external sites
@@ -162,7 +176,7 @@ function oauth_menu() {
   );
   
   $items['user/%user/testoauth'] = array(
-    'title' => t('Test OAuth from your account'), 
+    'title' => t('Test OAuth'), 
     'page callback' => 'oauth_test_calls',
     'page arguments' => array('user', 1),
     'access callback' => 'user_access',
@@ -185,6 +199,7 @@ function oauth_menu() {
    * this key+secret will be required to make an application access over 
    * Drupal server via oauth
    */
+  if(variable_get('oauth_use_coolauth', 0)){
    $items['user/%user/coolauth'] = array(
     'title' => t('Cool Auth'), 
     'page callback' => 'drupal_get_form',
@@ -193,6 +208,7 @@ function oauth_menu() {
     'access arguments' => array('access cool auth'),
     'type' => MENU_LOCAL_TASK,    
   );
+  } 
   $items['user/%/oauth/delete_access_token'] = array(
     'title' => t('Delete access token'),
     'description' => t('Delete access token corresponding to a domain'),
@@ -299,6 +315,7 @@ function _oauth_init_server() {
  * 		it is in form oauth_token=token&oauth_token_secret=secret is passed over server - this is what you are looking for in all this call :)
  */
 function oauth_request_token(){
+ if(variable_get('oauth_use_coolauth', 0)){	
   if($_GET['application_key'] == ''){
     drupal_set_message("error", t("Please use a valid application key in your request OR read whole API documentation carefully", TRUE));
     drupal_access_denied();
@@ -331,7 +348,29 @@ function oauth_request_token(){
   }
   // Set the $_GET['q'] back to it's original value
   $_GET['q'] = $q; 
-  }	  
+ 	 }
+  }else{
+   $server = _oauth_init_server(); 
+  // Remove the q variable from the query string, as it will break
+  // the signature validation.
+  $q = $_GET['q'];
+  unset($_GET['q']);
+
+  try {
+    $req = OAuthRequest::from_request();
+    $token = $server->fetch_request_token($req, $application_key);
+    print $token;
+    die();
+  } catch (OAuthException $e) {
+    print($e->getMessage() . "\n<hr />\n");
+    
+    print_r($req);
+    die();
+  }
+  // Set the $_GET['q'] back to it's original value
+  $_GET['q'] = $q; 
+  	
+  	}	  
  }
  
 
@@ -401,6 +440,28 @@ function oauth_access_token() {
   $_GET['q'] = $q;
 }
 
+
+function oauth_admin_settings() {
+	$form['settings'] = array(
+		'#title' => t('Administrator settings for OAuth module'),
+		'#type' => 'fieldset',
+		'#description' => t('Changing settings will make you change all method calls.<br/>For more details visit <a href = "http://drupal.org" >OAuth API documentation.</a>'),
+	);
+	$form['settings']['oauth_use_coolauth'] = array(
+		'#title' => t('Use COOL AUTH with OAuth'),
+		'#type' => 'checkbox',
+		'#description' => t('Makes use of cool auth authentication system in calls. It is used to keep track of calling web service and provide users more options regarding their security parameters.<br/>For more details on COOL-AUTH visit http://drupal.org/'),
+		'#default_value' => variable_get(oauth_use_coolauth, TRUE), 
+	);
+	$form['settings']['oauth_use_with_services'] = array(
+		'#title' => t('Use OAuth with Services API/module'),
+		'#description' => t('Check this option if you want to use services module with OAuth - Visit handbook for all API documentation.'),
+		'#type' => 'checkbox',
+		'#default_value' => variable_get(oauth_use_with_services, FALSE),
+		'#disabled' => !module_exists('services'),
+	);
+	return system_settings_form($form);		
+}
 /**
  * Form callback for granting access to the consumer
  *
@@ -443,6 +504,7 @@ function oauth_grant_access() {
   '#type' => 'hidden',
   '#value' => $_GET['oauth_timestamp'], 	
  );
+ if(variable_get('oauth_use_with_services', 0)){
   $form['services'] = array(
   '#title' => t('Select services'),
   '#type' => 'fieldset',  
@@ -459,6 +521,7 @@ function oauth_grant_access() {
   '#default_value' => 1,
  );
 } 
+}
   $form['confirm'] = array(
   '#type' => 'submit', 
   '#value' => t('Grant access'),
@@ -485,7 +548,8 @@ function oauth_grant_access() {
  * Authorizes an existing oauth request token and redirects to sender.
  */
 function oauth_grant_access_submit($form, &$form_state) {
-  global $user;		
+  global $user;	
+  if(variable_get('oauth_use_with_services', 0)){	
   module_invoke('services');
   $services = services_get_all();
   foreach ( $services as $service ){
@@ -502,7 +566,7 @@ function oauth_grant_access_submit($form, &$form_state) {
     }
   $services_oauth_serialized = serialize($services_oauth);  
   db_query("INSERT INTO {oauth_services} (consumer_key, services, timestamp, session_id ) VALUES ('%s', '%s', %d, '%s')", $form_state['values']['oauth_consumer_key'], $services_oauth_serialized, $form_state['values']['oauth_nonce_timestamp'], $user->sid) ; 	
-  
+}
   $server = _oauth_init_server();
   $q = $_GET['q'];
   unset($_GET['q']);
@@ -676,10 +740,15 @@ class DrupalOAuthDataStore extends OAuthDataStore {
         $token = new OAuthToken(user_password(32), user_password(32));
         $user_id = db_result(db_query("SELECT uid FROM {oauth_consumer} WHERE consumer_key = '%s'", $consumer->key));
         $session_id = db_result(db_query("SELECT sid FROM {sessions} WHERE uid=%d", $user_id));
-        
+        if(variable_get('oauth_use_coolauth', 0)){
         db_query("INSERT INTO {oauth_token} (application_key, consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', '%s', %d)", $object->application_key, $consumer->key, 'access', $token->key, $token->secret, $user_id);
+	}else{
+		db_query("INSERT INTO {oauth_token} (application_key, consumer_key, type, token_key, token_secret, uid) VALUES ('%s', '%s', '%s', '%s', '%s', %d)", 'NULL', $consumer->key, 'access', $token->key, $token->secret, $user_id);
+		}
 		db_query("DELETE FROM {oauth_token} WHERE type='request' AND token_key='%s'", $request_token->key);
+       if(variable_get('oauth_use_with_services', 0)){
         db_query("UPDATE {oauth_services} SET token_key = '%s' WHERE session_id= '%s'", $token->key, $session_id);
+	}
         return $token;
       }
     }
@@ -706,7 +775,11 @@ function oauth_consumer_view($access_token = NULL){
   
   foreach ($tokens as $application_key => $key) {
     $row = array();
+    if(variable_get('oauth_use_with_services', 0)){
     $domain = db_result(db_query("SELECT application_url FROM {oauth_cool_auth} WHERE application_key='%s'", $application_key));
+    }else{
+    $domain = 'NOT APPLICABLE HERE';	
+    	}
     $row[] = $domain;
     $row[] = $key->token_key;
         
@@ -733,10 +806,16 @@ function oauth_delete_access_token($access_token){
   global $user;
   if($access_token){
   if($user->uid){
+  	if(variable_get('oauth_use_coolauth', 0)){
     $domain_key = db_result(db_query("SELECT application_key FROM {oauth_token} WHERE token_key='%s' AND type='access'", $access_token));
     $domain = db_result(db_query("SELECT application_url from {oauth_cool_auth} WHERE application_key='%s'", $domain_key));
+	}
     db_query("DELETE FROM {oauth_token} WHERE token_key='%s' AND type='%s' AND uid=%d", $access_token, access, $user->uid);
+    if(variable_get('oauth_use_coolauth', 0)){
     drupal_set_message(print_r("$access_token has been deleted corresponding to domain $domain", TRUE));
+	}else{
+		drupal_set_message(print_r("$access_token has been deleted.", TRUE));
+		}
     drupal_goto($path="user/$user->uid/oauth");    
       }else{
     drupal_access_denied();
@@ -778,6 +857,13 @@ function oauth_get_accesstokens(){
 function oauth_test_calls(){
 	return	drupal_get_form("oauth_request_call");
  }
+/**
+ * @this function generates test browser for OAuth call testing 
+ * this is like the best part of OAuth module  
+ * 
+ * Please test your code here first and use this test code for your applications 
+ * 
+ */
 
 function oauth_request_call($form_state){
 	
@@ -826,6 +912,7 @@ function oauth_request_call($form_state){
 			'#weight' => 9,
 			'#default_value' => 0,
 		);
+	if(variable_get('oauth_use_coolauth', 0)){	
 		$form['indicator']['application'] = array(
 			'#title' => t('Application Settings'),
 			'#type' => 'fieldset',
@@ -842,7 +929,7 @@ function oauth_request_call($form_state){
 			'#type' => 'textfield',
 			'#weight' => 6,
 		);
-
+	}
 		$form['indicator']['request_call'] = array(
 			'#value' => t('Request Token Call'),
 			'#title' => t('Make call to server'),
@@ -898,7 +985,7 @@ function oauth_request_call($form_state){
 			'#weight' => 7,
 			'#default_value' => 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['SCRIPT_NAME'].'?q=oauth/access'
 		);
-                $form['indicator']['access_call'] = array(
+         $form['indicator']['access_call'] = array(
 			'#value' => t('OAuth Access Token Call'),
 			'#type' => 'submit',
 			'#weight' => 15,
@@ -917,7 +1004,7 @@ function oauth_request_call($form_state){
  			);
  			$form['request_url'] = array(
  				'#type' => 'hidden',
- 				'#value' => $form_values['request_url'],
+ 				'#value' => $form_state['request_url'],
  			);
  			break;
   }
@@ -936,11 +1023,18 @@ function oauth_request_call($form_state){
  
   
 function oauth_request_call_validate($form, &$form_state){
-	
+	if(variable_get('oauth_use_coolauth', 0)){
+	if($form_state['values']['op'] == 'Request Token Call'){
+		if(!$form_state['values']['consumer_key'] || !$form_state['values']['consumer_secret'] || !$form_state['values']['application_key'] || !$form_state['values']['application_secret'] || !$form_state['values']['request_url'] || !isset($form_state['values']['sig_method'])){
+			form_set_error('form', t('All Fields are Required to produce Request Tokens'));	
+		}
+	}
+}else{
 	if($form_state['values']['op'] == 'Request Token Call'){
 		if(!$form_state['values']['consumer_key'] || !$form_state['values']['consumer_secret'] || !$form_state['values']['request_url'] || !isset($form_state['values']['sig_method'])){
 			form_set_error('form', t('All Fields are Required to produce Request Tokens'));	
 		}
+	}
 	}		
 	if($form_state['values']['op'] == 'OAuth Authentication Call'){
 		if(!$form_state['values']['oauth_token'] || !$form_state['values']['oauth_token_secret'] || !$form_state['values']['auth_url']){
@@ -1071,16 +1165,21 @@ function oauth_request_call_submit($form, &$form_state){
     		parse_str($result_access->data);
     		$_SESSION['oauth']['oauth_access_token'] = $oauth_token;
     		$_SESSION['oauth']['oauth_access_token_secret'] = $oauth_token_secret;
-    		drupal_set_message('<pre>'. print_r("oauth_access_token  $oauth_token", TRUE) .'</pre>');
-    		drupal_set_message('<pre>'. print_r("oauth_access_token_secret  $oauth_token_secret", TRUE) .'</pre>');
+    		$_SESSION['oauth']['operation'] = '';
+    		drupal_set_message('<pre><b><i>'. print_r("oauth_access_token  $oauth_token", TRUE) .'</i></b></pre>');
+    		drupal_set_message('<pre><b><i>'. print_r("oauth_access_token_secret  $oauth_token_secret", TRUE) .'</i></b></pre>');
+		if(variable_get('oauth_use_with_services', 0)){
     		drupal_redirect_form($form, 'admin/build/services');
+		}
     	}
   if($form_state['values']['op'] == 'Request Token Call'){
     $parsed = parse_url($request_url);
     $params = array();
     parse_str($parsed['query'], $params);
+   if(variable_get('oauth_use_coolauth', 0)){
     $params['application_key'] = $form_state['values']['application_key'];
     $params['application_secret'] = $form_state['values']['application_secret'];
+}
     //$params['application_url'] = $form_state['values']['application_url'];
     $req_req = OAuthRequest::from_consumer_and_token($test_consumer, NULL, "GET", $request_url, $params);
     $req_req->sign_request($sig_method, $test_consumer, NULL);
@@ -1088,8 +1187,8 @@ function oauth_request_call_submit($form, &$form_state){
     $result_request = drupal_http_request($req_req, $headers = array(), $method = 'GET', $data = NULL, $retry = 3);
     parse_str($result_request->data);
     if(($oauth_token != '') && ($oauth_token_secret != '')){
-    drupal_set_message('<pre>'. print_r("oauth_token  $oauth_token", TRUE) .'</pre>');
-    drupal_set_message('<pre>'.print_r("oauth_token_secret  $oauth_token_secret", TRUE ).'</pre>');
+    drupal_set_message('<pre><b><i>'. print_r("oauth_token  $oauth_token", TRUE) .'</i></b></pre>');
+    drupal_set_message('<pre><b><i>'.print_r("oauth_token_secret  $oauth_token_secret", TRUE ).'</i></b></pre>');
 	
     $form_state['rebuild'] = TRUE;
     $form_state['data']['oauth_token'] =  $oauth_token;

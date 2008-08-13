@@ -196,8 +196,12 @@ function oauth_schema() {
 
 function oauth_install() {
   drupal_install_schema('oauth');
+  variable_set('oauth_use_coolauth', TRUE);
+  variable_set('oauth_use_with_services', TRUE);
 }
 
 function oauth_uninstall() {
   drupal_uninstall_schema('oauth');
+  variable_del('oauth_use_coolauth');
+  variable_del('oauth_use_with_services');
 }
