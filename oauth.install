@@ -1,207 +1,131 @@
 <?php
+// $Id$
+/**
+ * @author OAuth module Dev Team
+ * @file
+ *   Install, uninstall and update the module.
+ */
 
+/**
+ * Implementation of hook_install().
+ */
+function oauth_install() {
+  drupal_install_schema('oauth');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
 function oauth_schema() {
   $schema['oauth_consumer'] = array(
-    'description' => t('Stores records for OAuth consumers'),
+    'description' => t('Consumer keys for users that can consume services.'),
     'fields' => array(
       'uid' => array(
-        'type' => 'int', 
-        'unsigned' => TRUE, 
-        'not null' => TRUE
+        'description' => t('User ID from {user}.uid.'),
+        'type'        => 'int',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE
       ),
       'consumer_key' => array(
-        'type' => 'varchar',
-        'length' => 32, 
-        'not null' => TRUE
+        'description' => t('Consumer key allow the user to contact the services API as an external application.'),
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE
       ),
       'consumer_secret' => array(
-        'type' => 'varchar',
-        'length' => 32, 
-        'not null' => TRUE
+        'description' => t('Consumer key "password".'),
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE
       ),
     ),
-   'primary key' => array('uid'),
-   'unique keys' => array( 
-     'uid' => array('uid')
-   ),
-   'indexes' => array(
-      'consumer_key' => array('consumer_key'),
+    'primary key' => array('uid'),
+    'unique keys' => array(
+      'consumer_key' => array('consumer_key')
     ),
   );
-
-  $schema['oauth_nonce'] = array(
-    'description' => t('Stores nonces for OAuth requests'),
-    'fields' => array(
-      'nonce' => array(
-        'type' => 'varchar',
-	'length' => 64,
-        'not null' => TRUE
-      ),
-      'nonce_timestamp' => array(
-        'type' => 'int',
-        'not null' => TRUE
-      ),
-    ),
-   'primary key' => array('nonce'),
-   'indexes' => array(
-      'nonce_timestamp' => array('nonce_timestamp'),
-    ),
-
-  );
-
   $schema['oauth_token'] = array(
+    'description' => t('Tokens for request and services accesses.'),
     'fields' => array(
-      'uid' => array(
-        'type' => 'int', 
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0
-      ),
-      'application_key' => array(
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE
-      ),
-      'consumer_key' => array(
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE
-      ),
-      'type' => array(
-        'type' => 'varchar',
-        'length' => 7,
-        'not null' => TRUE
-      ),
       'token_key' => array(
-        'type' => 'varchar', 
-        'length' => 32, 
-        'not null' => TRUE
+        'description' => t('Tokens for request and services accesses.'),
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE
       ),
       'token_secret' => array(
-        'type' => 'varchar', 
-        'length' => 32, 
-        'not null' => TRUE
+        'description' => t('Token "password".'),
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE
       ),
-      'authorized' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'not null' => TRUE,
-        'default' => 0
+      'type' => array(
+        'description' => t('Type of the token: request or access.'),
+        'type'        => 'varchar',
+        'length'      => 7,
+        'not null'    => TRUE
       ),
-     ),
-   'primary key' => array('token_key'),
-   'unique keys' => array( 'token_key' => array('token_key')),
-   'indexes' => array(
-      'oauth_token_key_type' => array('token_key', 'type'),
-    ),
-  );
-   $schema['oauth_services'] = array(
-    'fields' => array(
-      'id' => array(
-        'type' => 'serial', 
-        'unsigned' => TRUE,
-        'not null' => TRUE,     
+      'uid' => array(
+        'description' => t('User ID from {user}.uid.'),
+        'type'        => 'int',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE
       ),
       'consumer_key' => array(
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE,
+        'description' => t('Consumer key from {oauth_consumer}.consumer_key.'),
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE
       ),
-      'services' => array(
-        'type' => 'varchar',
-        'length' => 10000,
-        'not null' => TRUE,
+      'webservices' => array(
+        'description' => t('An array of services that the use allowed the consumer to do.'),
+        'type'        => 'text',
       ),
-      'timestamp' => array(
-        'type' => 'int',
-        'not null' => TRUE,
-      ),
-      'session_id' => array(
-      	'type' => 'varchar',
-      	'length' => 64,
-      	'not null' => FALSE,
-      ),
-      'token_key' => array(
-        'type' => 'varchar', 
-        'length' => 32, 
-        'not null' => FALSE,
-      ),
-     ),
-   'primary key' => array('id'),
-   'indexes' => array(
-      'timestamp' => array('timestamp'),
-      ),
- );
- 
-  $schema['oauth_cool_auth'] = array(
-    'description' => t('Stores records for cool auth API'),
-    'fields' => array(
-      'uid' => array(
-        'type' => 'int', 
-        'unsigned' => TRUE, 
-        'not null' => TRUE
-      ),
-      'application_key' => array(
-        'type' => 'varchar',
-        'length' => 32, 
-        'not null' => TRUE
-      ),
-      'application_secret' => array(
-        'type' => 'varchar',
-        'length' => 32, 
-        'not null' => TRUE
-      ),
-      'application_title' => array(
-        'type' => 'varchar',
-        'length' => 256,
-        'not null' => TRUE
-      ),
-      'application_description' => array(
-        'type' => 'varchar',
-        'length' => 1024,
-        'not null' => TRUE
-      ),
-      'application_notes' => array(
-        'type' => 'varchar',
-        'length' => 2048,
-        'not null' => TRUE
-      ),
-      'application_url' => array(
-        'type' => 'varchar',
-        'length' => 256,
-        'not null' => TRUE
-      ),
-      'application_type' => array(
-        'type' => 'int', 
-        'unsigned' => TRUE, 
-        'not null' => TRUE
-      ),
-      'application_callback_url' => array(
-        'type' => 'varchar',
-        'length' => 256,
-        'not null' => TRUE
+      'authorized' => array(
+        'description' => t('In case its a request token, it checks if the user already authorized him to get an access token.'),
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'default'     => 0
       ),
     ),
-   'primary key' => array('uid'),
-   'unique keys' => array( 
-     'uid' => array('uid')
-   ),
+   'primary key' => array('token_key'),
    'indexes' => array(
-      'application_key' => array('application_key'),
+      'token_key_type' => array('token_key', 'type'),
     ),
   );
-  
+  $schema['oauth_nonce'] = array(
+    'description' => t('Stores timestamp against nonce for repeat attacks.'),
+    'fields' => array(
+      'nonce' => array(
+        'description' => t('The random 32 characters long string used on each request.'),
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => TRUE
+      ),
+      'timestamp' => array(
+        'description' => t('The timestamp of the request.'),
+        'type'        => 'int',
+        'not null'    => TRUE
+      ),
+      'token' => array(
+        'description' => t('Tokens for request and services accesses.'),
+        'type'        => 'varchar',
+        'length'      => 32
+      ),
+    ),
+    'primary key' => array('nonce'),
+    'indexes' => array(
+      'timestamp' => array('timestamp'),
+    ),
+  );
   return $schema;
 }
 
-function oauth_install() {
-  drupal_install_schema('oauth');
-  variable_set('oauth_use_coolauth', TRUE);
-  variable_set('oauth_use_with_services', TRUE);
-}
-
+/**
+ * Implementation of hook_uninstall().
+ */
 function oauth_uninstall() {
   drupal_uninstall_schema('oauth');
-  variable_del('oauth_use_coolauth');
-  variable_del('oauth_use_with_services');
+
+  variable_del('oauth_crypt');
 }
