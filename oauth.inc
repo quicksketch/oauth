@@ -378,11 +378,11 @@ function _oauth_token_access($timestamp, $nonce, $consumer_key, $token_key) {
 function _oauth_token_auth() {
   // Check some important arguments
   if (empty($_GET['oauth_token'])) {
-    drupal_set_message('Please include a valid OAuth token in your request.', 'error');
+    drupal_set_message(t('Please include a valid OAuth token in your request.'), 'error');
     return drupal_access_denied();
   }
   elseif (empty($_GET['oauth_callback'])) {
-    drupal_set_message('Please include a valid callback url in your request.', 'error');
+    drupal_set_message(t('Please include a valid callback url in your request.'), 'error');
     return drupal_access_denied();
   }
 
@@ -390,7 +390,7 @@ function _oauth_token_auth() {
   global $user;
   if ($user->uid != 0) {
     if (!user_access('access webservices')) {
-      drupal_set_message('error', t('You are not authorized to allow external services access to this system.'));
+      drupal_set_message( t('You are not authorized to allow external services access to this system.'), 'error');
       return drupal_access_denied();
     }
     return drupal_get_form('_oauth_token_auth_form');
