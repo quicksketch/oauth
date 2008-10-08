@@ -265,14 +265,14 @@ function _oauth_server_init() {
        *   case it doesnt exist.
        */
       function lookup_nonce($consumer, $token, $nonce, $timestamp) {
-        if (!$nonce_1 = db_result(db_query("SELECT nonce FROM {oauth_timestamp_nonce}
+        if (!$nonce_1 = db_result(db_query("SELECT nonce FROM {oauth_nonce}
           WHERE timestamp <= %d and token = '%s'", $timestamp, $token))) {
           $sql = array(
             'nonce'     => $nonce,
             'timestamp' => $timestamp,
             'token'     => $token,
           );
-          drupal_write_record('oauth_timestamp_nonce', $sql);
+          drupal_write_record('oauth_nonce', $sql);
           return NULL;
         }
         return $nonce_1;
