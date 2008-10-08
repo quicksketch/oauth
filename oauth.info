@@ -1,7 +1,4 @@
 ; $Id$
-name = OAuth
-description = An open protocol to allow API authentication in a simple and standard method from desktop and web applications.
-core = 6.x
-dependencies[] = services
-
-
+core            = "6.x"
+description     = "Enable the world wide standard OAuth for authentication."
+name            = "OAuth"
