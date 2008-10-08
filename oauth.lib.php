@@ -680,7 +680,7 @@ class OAuthDataStore {
 
 class OAuthUtil {
   public static function urlencode_rfc3986($string) {
-    return str_replace('+', ' ', str_replace('%7E', '~', rawurlencode($string)));
+    return str_replace('+', ' ', str_replace('%7E', '~', rawurlencode(print_r($string, TRUE))));
   }
 
 
