@@ -9,6 +9,32 @@
  */
 
 /**
+ * Implementation of hook_menu().
+ */
+function oauth_menu() {
+  $items['webservice/token_auth'] = array(
+    'access callback'   => TRUE,
+    'file'              => 'oauth.inc',
+    'page callback'     => '_oauth_token_auth',
+    'type'              => MENU_CALLBACK,
+  );
+  $items['webservice/token_request'] = array(
+    'access callback'   => TRUE,
+    'file'              => 'oauth.inc',
+    'page callback'     => '_oauth_token_request',
+    'type'              => MENU_CALLBACK,
+  );
+  $items['webservice/token_access'] = array(
+    'access callback'   => TRUE,
+    'file'              => 'oauth.inc',
+    'page callback'     => '_oauth_token_access',
+    'type'              => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
  * Implementation of hook_perm().
  */
 function oauth_perm() {
