@@ -149,6 +149,7 @@ function oauth_user($op, &$edit, &$account, $category = NULL) {
 
   // Delete all tokens related to a user
   elseif ($op == 'delete') {
+    module_load_include('inc', 'oauth');
     $consumer = _oauth_consumer_get($account->uid);
     db_query('DELETE FROM {oauth_consumer}
       WHERE uid = %d', $account->uid);
