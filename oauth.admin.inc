@@ -43,11 +43,13 @@ function _oauth_user($op, &$edit, &$account, $category = NULL) {
     '#title'      => t('Consumer key'),
     '#type'       => 'user_profile_item',
     '#value'      => $consumer->key,
+    '#weight'     => 1,
   );
   $account->content['oauth']['consumer_secret'] = array(
     '#title'      => t('Consumer secret'),
     '#type'       => 'user_profile_item',
     '#value'      => $consumer->secret,
+    '#weight'     => 2,
   );
 
   // Specially useful for developers, it will create and show
@@ -73,11 +75,13 @@ function _oauth_user($op, &$edit, &$account, $category = NULL) {
       '#title'      => t('Access token key'),
       '#type'       => 'user_profile_item',
       '#value'      => empty($token->key) ? $token->token_key : $token->key,
+      '#weight'     => 3,
     );
     $account->content['oauth']['own_access_token_secret'] = array(
       '#title'      => t('Access token secret'),
       '#type'       => 'user_profile_item',
       '#value'      => empty($token->secret) ? $token->token_secret : $token->secret,
+      '#weight'     => 4,
     );
   }
 }
