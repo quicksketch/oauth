@@ -122,7 +122,7 @@ class _oauth_auth {
       }
 
       // Check if the consumer key and token are valid
-      if (!$consumer_uid = db_result(db_query("SELECT uid FROM {webservices_consumer}
+      if (!$consumer_uid = db_result(db_query("SELECT uid FROM {oauth_consumer}
           WHERE consumer_key = '%s'",
           $consumer_key))) {
         throw new Exception(t('Invalid consumer key.'));
