@@ -515,6 +515,7 @@ function _oauth_token_request($timestamp, $nonce, $consumer_key, $consumer_secre
     return $token;
   }
   catch (OAuthException $e) {
+    module_load_include('inc', 'webservices');
     return webservices_error($e->getMessage());
   }
 }
