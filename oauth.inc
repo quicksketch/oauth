@@ -468,9 +468,12 @@ function _oauth_token_auth_form() {
     '#type'         => 'fieldset',
   );
   foreach (webservices_service_get_all() as $service) {
-    $access_arguments = isset($method['#access arguments']) ? $method['#access arguments'] : array();
+    $access_arguments = isset($service['#access arguments']) ? $service['#access arguments'] : array();
     // Call default or custom access callback
-    if (call_user_func_array($method['#access callback'], $access_arguments) != TRUE) {
+    if (!empty($service['#access callback'])
+        and ($service['#access callback'] == TRUE
+        or (function_exists($service['#access callback'])
+        and call_user_func_array($service['#access callback'], $access_arguments) == TRUE))) {
       $form['webservices'][$service['#method']] = array(
         '#title'          => $service['#method'],
         '#type'           => 'checkbox',
@@ -510,7 +513,7 @@ function _oauth_token_auth_form_submit(&$form, &$form_state) {
     'token_key'   => $form_state['values']['oauth_token'],
     'webservices' => serialize($services),
   );
-  drupal_write_record('webservices_token', $sql, 'token_key');
+  drupal_write_record('oauth_token', $sql, 'token_key');
 
   // Return to the consumer site
   drupal_goto($form_state['values']['oauth_callback']);
