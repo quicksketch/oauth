@@ -29,12 +29,14 @@ function oauth_menu() {
     'access callback'   => TRUE,
     'file'              => 'oauth.inc',
     'page callback'     => '_oauth_token_request',
+    'page arguments'    => array(NULL, NULL, NULL, NULL, NULL),
     'type'              => MENU_CALLBACK,
   );
   $items['webservice/token_access'] = array(
     'access callback'   => TRUE,
     'file'              => 'oauth.inc',
     'page callback'     => '_oauth_token_access',
+    'page arguments'    => array(NULL, NULL, NULL, NULL, NULL, NULL),
     'type'              => MENU_CALLBACK,
   );
 
@@ -79,9 +81,14 @@ function oauth_webservices_info() {
           '#description'    => t('Consumer key.'),
         ),
         array(
-          '#name'           => 'consumer_secret',
+          '#name'           => 'oauth_signature',
           '#type'           => 'string',
-          '#description'    => t('Consumer secret.'),
+          '#description'    => t('Request signature.'),
+        ),
+        array(
+          '#name'           => 'oauth_version',
+          '#type'           => 'string',
+          '#description'    => t('OAuth version used.'),
         ),
       ),
       '#return'           => 'array',
@@ -112,6 +119,16 @@ function oauth_webservices_info() {
           '#name'           => 'token_key',
           '#type'           => 'string',
           '#description'    => t('OAuth Resquest token.'),
+        ),
+        array(
+          '#name'           => 'oauth_signature',
+          '#type'           => 'string',
+          '#description'    => t('Request signature.'),
+        ),
+        array(
+          '#name'           => 'oauth_version',
+          '#type'           => 'string',
+          '#description'    => t('OAuth version used.'),
         ),
       ),
       '#return'           => 'array',

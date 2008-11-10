@@ -343,15 +343,39 @@ function _oauth_server_init() {
 /**
  * Access the OAuth services
  *
+ * Note that this function can be called directly from Menu API. In this case,
+ * all arguments will be NULL and the real values will come thru $_GET.
+ *
+ * @param $timestamp
+ *   Number. The time when the request was made (in timestamp).
+ * @param $nonce
+ *   String. A randon 32-char long string that ensure that a request is
+ *   unique: even 2 requests from the same consumer must have different
+ *   nonce values.
  * @param $consumer_key
  *   String. The consumer key, which is linked to a Drupal user.
  * @param $token_key
  *   String. The request token, which will be replaced by the
  *   access token.
+ * @param $signature
+ *   String. Using the signature method, its the resulting HASH value of all
+ *   content. It uses the consumer keys and secrets, so its unique accross each
+ *   request and consumer.
+ * @param $version
+ *   String. The OAuth version used by the consumer: currently, its "1.0". Note
+ *   that even its number, it will be treated as string.
  */
-function _oauth_token_access($timestamp, $nonce, $consumer_key, $token_key) {
+function _oauth_token_access($timestamp, $nonce, $consumer_key, $token_key, $signature, $version) {
   $server = _oauth_server_init();
 
+  // Get the request values
+  if ($timestamp === NULL) {
+    $timestamp    = $_GET['oauth_timestamp'];
+    $nonce        = $_GET['oauth_nonce'];
+    $consumer_key = $_GET['oauth_consumer_key'];
+    $signature    = $_GET['oauth_signature'];
+    $version      = $_GET['oauth_version'];
+  }
   $arguments = array(
     'oauth_token'             => $token_key,
     'oauth_consumer_key'      => $consumer_key,
@@ -492,22 +516,45 @@ function _oauth_token_auth_form_submit(&$form, &$form_state) {
 }
 
 /**
- * Generate a request token from the request
+ * Generate a request token from the request.
  *
+ * Note that this function can be called directly from Menu API. In this case,
+ * all arguments will be NULL and the real values will come thru $_GET.
+ *
+ * @param $timestamp
+ *   Number. The time when the request was made (in timestamp).
+ * @param $nonce
+ *   String. A randon 32-char long string that ensure that a request is
+ *   unique: even 2 requests from the same consumer must have different
+ *   nonce values.
  * @param $consumer_key
  *   String. The consumer key, which is linked to a Drupal user.
- * @param $consumer_secret
- *   String. The consumer secret, something like the consumer password.
+ * @param $signature
+ *   String. Using the signature method, its the resulting HASH value of all
+ *   content. It uses the consumer keys and secrets, so its unique accross each
+ *   request and consumer.
+ * @param $version
+ *   String. The OAuth version used by the consumer: currently, its "1.0". Note
+ *   that even its number, it will be treated as string.
  */
-function _oauth_token_request($timestamp, $nonce, $consumer_key, $consumer_secret) {
+function _oauth_token_request($timestamp, $nonce, $consumer_key, $signature, $version) {
   $server = _oauth_server_init();
 
+  // Get the request values
+  if ($timestamp === NULL) {
+    $timestamp    = $_GET['oauth_timestamp'];
+    $nonce        = $_GET['oauth_nonce'];
+    $consumer_key = $_GET['oauth_consumer_key'];
+    $signature    = $_GET['oauth_signature'];
+    $version      = $_GET['oauth_version'];
+  }
   $arguments = array(
     'oauth_consumer_key'      => $consumer_key,
-    'oauth_consumer_secret'   => $consumer_secret,
     'oauth_timestamp'         => $timestamp,
     'oauth_nonce'             => $nonce,
     'oauth_signature_method'  => variable_get('oauth_crypt', 'PLAINTEXT'),
+    'oauth_signature'         => $signature,
+    'oauth_version'           => $version,
   );
 
   try {
