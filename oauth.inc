@@ -366,6 +366,7 @@ function _oauth_token_access($timestamp, $nonce, $consumer_key, $token_key) {
     return $token;
   }
   catch (OAuthException $e) {
+    module_load_include('inc', 'webservices');
     return webservices_error($e->getMessage());
   }
 }
