@@ -365,7 +365,7 @@ function _oauth_server_init() {
  *   String. The OAuth version used by the consumer: currently, its "1.0". Note
  *   that even its number, it will be treated as string.
  */
-function _oauth_token_access($timestamp, $nonce, $consumer_key, $token_key, $signature, $version) {
+function _oauth_token_access($version, $timestamp, $nonce, $consumer_key, $token_key, $signature_method, $signature) {
   $server = _oauth_server_init();
 
   // Get the request values
@@ -382,6 +382,7 @@ function _oauth_token_access($timestamp, $nonce, $consumer_key, $token_key, $sig
     'oauth_timestamp'         => $timestamp,
     'oauth_nonce'             => $nonce,
     'oauth_signature_method'  => variable_get('oauth_crypt', 'PLAINTEXT'),
+    'oauth_signature'         => $signature,
   );
 
   try {
@@ -537,7 +538,7 @@ function _oauth_token_auth_form_submit(&$form, &$form_state) {
  *   String. The OAuth version used by the consumer: currently, its "1.0". Note
  *   that even its number, it will be treated as string.
  */
-function _oauth_token_request($timestamp, $nonce, $consumer_key, $signature, $version) {
+function _oauth_token_request($version, $timestamp, $nonce, $consumer_key, $signature_method, $signature) {
   $server = _oauth_server_init();
 
   // Get the request values

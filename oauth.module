@@ -62,9 +62,15 @@ function oauth_webservices_info() {
       '#method'           => 'system.tokenRequest',
       '#description'      => t('Request a OAuth request token.'),
       '#callback'         => '_oauth_token_request',
+      '#access callback'  => TRUE,
       '#no_auth'          => TRUE,
       '#file'             => array('file' => 'inc', 'module' => 'oauth'),
       '#args'             => array(
+        array(
+          '#name'           => 'oauth_version',
+          '#type'           => 'string',
+          '#description'    => t('OAuth version used.'),
+        ),
         array(
           '#name'           => 'timestamp',
           '#type'           => 'int',
@@ -81,14 +87,14 @@ function oauth_webservices_info() {
           '#description'    => t('Consumer key.'),
         ),
         array(
+          '#name'           => 'oauth_signature_method',
+          '#type'           => 'string',
+          '#description'    => t('Request signature methoD.'),
+        ),
+        array(
           '#name'           => 'oauth_signature',
           '#type'           => 'string',
           '#description'    => t('Request signature.'),
-        ),
-        array(
-          '#name'           => 'oauth_version',
-          '#type'           => 'string',
-          '#description'    => t('OAuth version used.'),
         ),
       ),
       '#return'           => 'array',
