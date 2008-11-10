@@ -164,7 +164,7 @@ function oauth_form_user_login_alter(&$form, &$form_state) {
  * Implementation of hook_form_alter().
  */
 function oauth_form_user_login_block_alter(&$form, &$form_state) {
-  webservices_form_user_login_alter($form, $form_state);
+  oauth_form_user_login_alter($form, $form_state);
 }
 
 /**
