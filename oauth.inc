@@ -317,13 +317,10 @@ function _oauth_server_init() {
               'type'            => 'access',
               'token_key'       => $token_new->key,
               'token_secret'    => $token_new->secret,
-              'uid'             => $object['uid'],
-              'webservices'     => serialize($object['webservices'])
+              'uid'             => $object['uid']
             );
-            drupal_write_record('oauth_token', $sql);
+            drupal_write_record('oauth_token', $sql, array('uid', 'consumer_key'));
 
-            db_query("DELETE FROM {oauth_token} WHERE token_key = '%s'",
-              $token_old->key);
             return $token_new;
           }
         }
@@ -370,15 +367,18 @@ function _oauth_token_access($version, $timestamp, $nonce, $consumer_key, $token
 
   // Get the request values
   if ($timestamp === NULL) {
-    $timestamp    = $_GET['oauth_timestamp'];
-    $nonce        = $_GET['oauth_nonce'];
-    $consumer_key = $_GET['oauth_consumer_key'];
-    $signature    = $_GET['oauth_signature'];
-    $version      = $_GET['oauth_version'];
+    $version          = $_GET['oauth_version'];
+    $timestamp        = $_GET['oauth_timestamp'];
+    $nonce            = $_GET['oauth_nonce'];
+    $consumer_key     = $_GET['oauth_consumer_key'];
+    $token_key        = $_GET['oauth_token'];
+    $signature_method = $_GET['oauth_signature_method'];
+    $signature        = $_GET['oauth_signature'];
   }
   $arguments = array(
     'oauth_token'             => $token_key,
     'oauth_consumer_key'      => $consumer_key,
+    'oauth_version'           => $version,
     'oauth_timestamp'         => $timestamp,
     'oauth_nonce'             => $nonce,
     'oauth_signature_method'  => variable_get('oauth_crypt', 'PLAINTEXT'),
@@ -546,11 +546,12 @@ function _oauth_token_request($version, $timestamp, $nonce, $consumer_key, $sign
 
   // Get the request values
   if ($timestamp === NULL) {
-    $timestamp    = $_GET['oauth_timestamp'];
-    $nonce        = $_GET['oauth_nonce'];
-    $consumer_key = $_GET['oauth_consumer_key'];
-    $signature    = $_GET['oauth_signature'];
-    $version      = $_GET['oauth_version'];
+    $version          = $_GET['oauth_version'];
+    $timestamp        = $_GET['oauth_timestamp'];
+    $nonce            = $_GET['oauth_nonce'];
+    $consumer_key     = $_GET['oauth_consumer_key'];
+    $signature_method = $_GET['oauth_signature_method'];
+    $signature        = $_GET['oauth_signature'];
   }
   $arguments = array(
     'oauth_consumer_key'      => $consumer_key,
