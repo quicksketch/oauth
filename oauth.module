@@ -107,6 +107,11 @@ function oauth_webservices_info() {
       '#file'             => array('file' => 'inc', 'module' => 'oauth'),
       '#args'             => array(
         array(
+          '#name'           => 'oauth_version',
+          '#type'           => 'string',
+          '#description'    => t('OAuth version used.'),
+        ),
+        array(
           '#name'           => 'timestamp',
           '#type'           => 'int',
           '#description'    => t('The timestamp of the request.'),
@@ -127,14 +132,14 @@ function oauth_webservices_info() {
           '#description'    => t('OAuth Resquest token.'),
         ),
         array(
+          '#name'           => 'oauth_signature_method',
+          '#type'           => 'string',
+          '#description'    => t('Request signature methoD.'),
+        ),
+        array(
           '#name'           => 'oauth_signature',
           '#type'           => 'string',
           '#description'    => t('Request signature.'),
-        ),
-        array(
-          '#name'           => 'oauth_version',
-          '#type'           => 'string',
-          '#description'    => t('OAuth version used.'),
         ),
       ),
       '#return'           => 'array',
