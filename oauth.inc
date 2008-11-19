@@ -156,7 +156,7 @@ function oauth_form_user_login_alter(&$form, &$form_state) {
     );
     $query = $_GET;
     unset($query['q']);
-    $form['#redirect'] = url('webservice/auth', array('query' => $query, 'absolute' => TRUE));
+    $form['#redirect'] = url('webservice/token_auth', array('query' => $query, 'absolute' => TRUE));
   }
 }
 
