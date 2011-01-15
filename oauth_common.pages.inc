@@ -44,7 +44,7 @@ function oauth_common_page_authorized($csid = NULL) {
     else {
       // Backwards compatibility with 6.x-3.0-beta3
       $request_token = DrupalOAuthToken::load($_GET['oauth_token'], FALSE);
-      $consumer = $request_token->consumer;
+      $consumer = $request_token ? $request_token->consumer : FALSE;
     }
     if (!empty($request_token)) {
       $client = new DrupalOAuthClient($consumer, $request_token);
