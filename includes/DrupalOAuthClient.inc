@@ -36,7 +36,7 @@ class DrupalOAuthClient {
         $signature_method = substr(strtolower($this->consumer->configuration['signature_method']), 5);
       }
       else {
-        $signature_method = 'sha512';
+        $signature_method = 'SHA1';
       }
       $this->signatureMethod = self::signatureMethod($signature_method);
     }
@@ -54,10 +54,10 @@ class DrupalOAuthClient {
    * @return OAuthSignatureMethod
    *  The signature method object.
    */
-  public static function signatureMethod($method = 'sha512', $fallback_to_sha1 = TRUE) {
+  public static function signatureMethod($method = 'SHA1', $fallback_to_sha1 = TRUE) {
     $sign = NULL;
 
-    if (in_array($method, hash_algos())) {
+    if (in_array(drupal_strtolower($method), hash_algos())) {
       $sign = new OAuthSignatureMethod_HMAC($method);
     }
     else if ($fallback_to_sha1) {
