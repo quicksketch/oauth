@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 class DrupalOAuthToken extends OAuthToken {
   public $tid = 0;

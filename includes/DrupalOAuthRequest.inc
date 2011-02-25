@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 class DrupalOAuthRequest extends OAuthRequest {
   /**

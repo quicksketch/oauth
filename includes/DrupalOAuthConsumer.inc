@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 class DrupalOAuthConsumer extends OAuthConsumer {
   public $csid = 0;

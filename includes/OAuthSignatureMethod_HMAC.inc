@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * A generic signature method implementation that leverages hash_hmac() for

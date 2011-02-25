@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update makes it possible for consumers to store tokens in the common

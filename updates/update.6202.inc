@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update allows for longer consumer secrets.

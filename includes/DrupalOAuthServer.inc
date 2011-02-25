@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 class DrupalOAuthServer extends OAuthServer {
   public function __construct($context) {

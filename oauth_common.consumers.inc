@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Menu system callback for listing a users consumers.

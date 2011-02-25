@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Return information about consumers related to a user.

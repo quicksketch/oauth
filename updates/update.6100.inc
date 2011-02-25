@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update adds the concept of contexts for consumers and authorization levels.

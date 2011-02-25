@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function _oauth_common_admin() {
   $form = array();

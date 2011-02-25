@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update turns the contexts into ctools-manageable entities and migrates
