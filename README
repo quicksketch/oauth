@@ -1,4 +1,3 @@
-
 OAuth implements the OAuth classes for use with Drupal and acts as a support module for other modules that wish to use OAuth.
 
 OAuth Client flow:
