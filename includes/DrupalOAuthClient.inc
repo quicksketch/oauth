@@ -35,7 +35,7 @@ class DrupalOAuthClient {
         $signature_method = substr(strtolower($this->consumer->configuration['signature_method']), 5);
       }
       else {
-        $signature_method = 'sha512';
+        $signature_method = 'SHA1';
       }
       $this->signatureMethod = self::signatureMethod($signature_method);
     }
@@ -53,10 +53,10 @@ class DrupalOAuthClient {
    * @return OAuthSignatureMethod
    *  The signature method object.
    */
-  public static function signatureMethod($method = 'sha512', $fallback_to_sha1 = TRUE) {
+  public static function signatureMethod($method = 'SHA1', $fallback_to_sha1 = TRUE) {
     $sign = NULL;
 
-    if (in_array($method, hash_algos())) {
+    if (in_array(drupal_strtolower($method), hash_algos())) {
       $sign = new OAuthSignatureMethod_HMAC($method);
     }
     else if ($fallback_to_sha1) {
@@ -252,6 +252,7 @@ class DrupalOAuthClient {
     }
 
     // Check if we've has recieved this token previously and if so use the old one
+    //TODO: Is this safe!? What if eg. multiple users are getting the same access token from the provider?
     $this->accessToken = DrupalOAuthToken::loadByKey($params['oauth_token'], $this->consumer);
     //TODO: Can a secret change even though the token doesn't? If so it needs to be changed.
     if (!$this->accessToken) {
