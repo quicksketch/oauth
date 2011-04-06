@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Combined menu callback for tests of consumers and access tokens

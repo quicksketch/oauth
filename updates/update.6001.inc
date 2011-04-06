@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update either creates a authorization levels table, or transfers the

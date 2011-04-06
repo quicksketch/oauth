@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update unifies the handling of provider and consumer consumer entries.

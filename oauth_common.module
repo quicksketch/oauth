@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 define('OAUTH_COMMON_CODE_BRANCH', '6.x-3.x');
 

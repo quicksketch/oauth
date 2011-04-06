@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update adds a expiry time column to the tokens table.

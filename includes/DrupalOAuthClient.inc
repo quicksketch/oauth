@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 class DrupalOAuthClient {
   public $version = OAUTH_COMMON_VERSION_1_RFC;

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * This update massively refactors the database.
