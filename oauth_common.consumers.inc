@@ -10,10 +10,10 @@ function oauth_common_page_user_consumers($account) {
 
   $ci = oauth_common_user_consumers($account->uid);
   $header = array(
-    array('data' => t('Name'),       'class' => 'oauth-common-consumer-name'),
-    array('data' => t('Key'),        'class' => 'oauth-common-consumer-key'),
-    array('data' => t('Created'),    'class' => 'oauth-common-consumer-created'),
-    array('data' => t('Operations'), 'class' => 'oauth-common-consumer-operations'),
+    array('data' => t('Name'),       'class' =>  array('oauth-common-consumer-name')),
+    array('data' => t('Key'),        'class' =>  array('oauth-common-consumer-key')),
+    array('data' => t('Created'),    'class' =>  array('oauth-common-consumer-created')),
+    array('data' => t('Operations'), 'class' =>  array('oauth-common-consumer-operations')),
   );
   $rows = array();
 
@@ -21,15 +21,15 @@ function oauth_common_page_user_consumers($account) {
     $data = array(
       'name' => array(
         'data'  => $consumer->name,
-        'class' => 'oauth-common-consumer-name',
+        'class' =>  array('oauth-common-consumer-name'),
       ),
       'key' => array(
         'data'  => substr($consumer->key, 0, 6) . '...',
-        'class' => 'oauth-common-consumer-key',
+        'class' =>  array('oauth-common-consumer-key'),
       ),
       'created' => array(
         'data'  => format_date($consumer->created),
-        'class' => 'oauth-common-consumer-created',
+        'class' =>  array('oauth-common-consumer-created'),
       ),
     );
     $operations = array();
@@ -48,15 +48,19 @@ function oauth_common_page_user_consumers($account) {
     $rows[] = array(
       'data' => $data + array(
         'operations' => array(
-          'data'  => theme('links', $operations),
-          'class' => 'oauth-common-consumer-operations',
+          'data'  => theme('links', array('links' => $operations)),
+          'class' =>  array('oauth-common-consumer-operations'),
         ),
       ),
-      'class' => 'oauth-common-consumer',
+      'class' =>  array('oauth-common-consumer'),
     );
   }
 
-  $table = theme('table', $header, $rows, array('id' => 'oauth-common-list-consumers'));
+  $table = theme('table', array(
+    'header' => $header,
+    'rows'   => $rows,
+    'attributes' => array('id' => 'oauth-common-list-consumers')
+  ));
 
   return $table;
 }
@@ -83,7 +87,7 @@ function oauth_common_edit_consumer($consumer) {
 /**
  * The consumer form that is shared by the add and edit page.
  */
-function oauth_common_form_consumer(&$form_state, $consumer) {
+function oauth_common_form_consumer($form, &$form_state, $consumer) {
   $form = array();
 
   $form['consumer_object'] = array(
@@ -110,7 +114,7 @@ function oauth_common_form_consumer(&$form_state, $consumer) {
     $form['context'] = array(
       '#type' => 'item',
       '#title' => t('Application context'),
-      '#value' => isset($contexts[$consumer->context]) ? $contexts[$consumer->context] : $consumer->context,
+      '#markup' => isset($contexts[$consumer->context]) ? $contexts[$consumer->context] : $consumer->context,
     );
   }
   else {
@@ -133,14 +137,14 @@ function oauth_common_form_consumer(&$form_state, $consumer) {
     $form['key'] = array(
       '#type' => 'item',
       '#title' => t('Key'),
-      '#value' => $consumer->key,
+      '#markup' => $consumer->key,
     );
 
     $form['secret'] = array(
       '#type' => 'item',
       '#prefix' => '<div id="consumer-secret-wrapper">',
       '#title' => t('Secret'),
-      '#value' => substr($consumer->secret, 0, 6) . '...',
+      '#markup' => substr($consumer->secret, 0, 6) . '...',
     );
 
     $form['show_secret'] = array(
@@ -216,7 +220,7 @@ function oauth_common_form_consumer_delete($form_state, $consumer) {
     ),
     'confirm' => array(
       '#type' => 'item',
-      '#value' => t('Are you sure you want to delete application <strong>@a</strong>?', array('@a' => $consumer->name)),
+      '#markup' => t('Are you sure you want to delete application <strong>@a</strong>?', array('@a' => $consumer->name)),
     ),
     'delete' => array(
       '#type' => 'submit',

@@ -4,5 +4,4 @@ package = "OAuth"
 
 dependencies[] = oauth_common
 
-core = 6.x
-php = 5.2
+core = 7.x

@@ -22,8 +22,8 @@ function _oauth_common_validate_request_callback($type, $unsigned = NULL) {
     }
   }
   catch (OAuthException $e) {
-    drupal_set_header('HTTP/1.0 401 Unauthorized: ' . $e->getMessage());
-    drupal_set_header(sprintf('WWW-Authenticate: OAuth realm="%s"', url('', array('absolute' => TRUE))));
+    drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
+    drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
   exit;
 }
@@ -131,7 +131,7 @@ function oauth_common_form_authorize() {
     );
 
     $title = !empty($context->title) ? $context->title : 'Authorize @appname';
-    drupal_set_title(t($title, $tvars));
+    drupal_set_title(t($title, $tvars), PASS_THROUGH);
 
     $form = array();
 
@@ -144,16 +144,16 @@ function oauth_common_form_authorize() {
       'The application @appname wants to access @sitename on your behalf, check the permissions that you would like the application to have.';
     $form['message'] = array(
       '#type' => 'item',
-      '#value' => t($message, $tvars),
+      '#markup' => t($message, $tvars),
     );
 
     $message = !empty($context->authorization_options['warning']) ? $context->authorization_options['warning'] :
       'If you don\'t know what @appname is, or don\'t want to give it access to your content, just click here and we\'ll take you away from this page without granting @appname any access to @sitename.';
     $form['warning'] = array(
       '#type' => 'item',
-      '#value' => l(t($message, $tvars), 'oauth/authorization/deny/' . $token->key),
+      '#markup' => l(t($message, $tvars), 'oauth/authorization/deny/' . $token->key),
       '#attributes' => array(
-        'class' => 'abort-authorization',
+        'class' => array('abort-authorization'),
       ),
     );
 
@@ -193,10 +193,10 @@ function oauth_common_form_authorize() {
     $deny_title = !empty($context->authorization_options['deny_access_title']) ? $context->authorization_options['deny_access_title'] :
       'Deny access';
     $form['deny'] = array(
-      '#type'   => 'item',
-      '#value'  => l(t($deny_title), 'oauth/authorization/deny/' . $token->key),
+      '#type' => 'item',
+      '#markup' => l(t($deny_title), 'oauth/authorization/deny/' . $token->key),
       '#attributes' => array(
-        'class' => 'deny-access',
+        'class' => array('deny-access'),
       ),
     );
 
@@ -212,11 +212,11 @@ function oauth_common_form_authorize() {
   else {
     $query = $_GET;
     unset($query['q']); // why are there so few q's?
-    drupal_goto('user/login', array(
+    drupal_goto('user/login', array('query' => array(
       'destination' => url('oauth/authorize', array(
         'query' => $query,
       )),
-    ));
+    )));
   }
 }
 
@@ -333,8 +333,8 @@ function oauth_common_callback_request_token() {
     print $server->fetch_request_token($req);
   }
   catch (OAuthException $e) {
-    drupal_set_header('HTTP/1.0 401 Unauthorized: ' . $e->getMessage());
-    drupal_set_header(sprintf('WWW-Authenticate: OAuth realm="%s"', url('', array('absolute' => TRUE))));
+    drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
+    drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
 }
 
@@ -352,7 +352,7 @@ function oauth_common_callback_access_token() {
     $access_token = $server->fetch_access_token($req);
 
     // Set the expiry time based on context settings or get parameter
-    $expires = !empty($context->authorization_options['access_token_lifetime']) ? time() + $context->authorization_options['access_token_lifetime'] : 0;
+    $expires = !empty($context->authorization_options['access_token_lifetime']) ? REQUEST_TIME + $context->authorization_options['access_token_lifetime'] : 0;
     if ($_GET['expires'] && intval($_GET['expires'])) {
       $hint = intval($_GET['expires']);
       // Only accept more restrictive expiry times
@@ -370,7 +370,7 @@ function oauth_common_callback_access_token() {
     print $access_token;
   }
   catch (OAuthException $e) {
-    drupal_set_header('HTTP/1.0 401 Unauthorized: ' . $e->getMessage());
-    drupal_set_header(sprintf('WWW-Authenticate: OAuth realm="%s"', url('', array('absolute' => TRUE))));
+    drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
+    drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
 }

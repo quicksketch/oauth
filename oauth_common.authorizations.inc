@@ -7,11 +7,11 @@
 
 function oauth_common_page_user_authorizations($account) {
   $header = array(
-    array('data' => t('Application'), 'class' => "oauth-common-authorization-application"),
-    array('data' => t('Key'),         'class' => "oauth-common-authorization-key"),
-    array('data' => t('Created'),     'class' => "oauth-common-authorization-created"),
-    array('data' => t('Expires'),     'class' => "oauth-common-authorization-expires"),
-    array('data' => t('Operations'),  'class' => "oauth-common-authorization-operations"),
+    array('data' => t('Application'), 'class' =>  array("oauth-common-authorization-application")),
+    array('data' => t('Key'),         'class' =>  array("oauth-common-authorization-key")),
+    array('data' => t('Created'),     'class' =>  array("oauth-common-authorization-created")),
+    array('data' => t('Expires'),     'class' =>  array("oauth-common-authorization-expires")),
+    array('data' => t('Operations'),  'class' =>  array("oauth-common-authorization-operations")),
   );
 
   $access_tokens = oauth_common_get_user_provider_tokens($account->uid);
@@ -23,15 +23,15 @@ function oauth_common_page_user_authorizations($account) {
     $data = array(
       'application' => array(
         'data'  => check_plain($consumer->name),
-        'class' => "oauth-common-authorization-application",
+        'class' =>  array("oauth-common-authorization-application"),
       ),
       'key' => array(
         'data'  => substr($token->key, 0, 6) . '...',
-        'class' => "oauth-common-authorization-key",
+        'class' =>  array("oauth-common-authorization-key"),
       ),
       'created' => array(
         'data'  => format_date($token->created),
-        'class' => "oauth-common-authorization-created",
+        'class' =>  array("oauth-common-authorization-created"),
       ),
     );
     $operations = array();
@@ -50,20 +50,24 @@ function oauth_common_page_user_authorizations($account) {
 
     $data['expires'] = array(
       'data'  => $token->expires ? format_date($token->expires) : t('Never'),
-      'class' => "oauth-common-authorization-expires",
+      'class' =>  array("oauth-common-authorization-expires"),
     );
 
     $rows[] = array(
       'data' => $data + array(
         'operations' => array(
-          'data'  => theme('links', $operations),
-          'class' => "oauth-common-authorization-operations",
+          'data'  => theme('links', array('links' => $operations)),
+          'class' =>  array("oauth-common-authorization-operations"),
         ),
       ),
     );
   }
 
-  $table = theme('table', $header, $rows, array('id' => "oauth-common-list-authorization"));
+  $table = theme('table', array(
+    'header' => $header,
+    'rows'   => $rows,
+    'attributes' => array('id' => 'oauth-common-list-authorization')
+  ));
 
   return $table;
 }
@@ -81,7 +85,7 @@ function oauth_common_form_authorization($form_state, $token) {
   $consumer = $token->consumer;
   $context = oauth_common_context_load($consumer->context);
 
-  drupal_set_title(t('Authorization for @app', array('@app' => $consumer->name)));
+  drupal_set_title(t('Authorization for @app', array('@app' => $consumer->name)), PASS_THROUGH);
 
   $form['token_object'] = array(
     '#type' => 'value',
@@ -97,19 +101,19 @@ function oauth_common_form_authorization($form_state, $token) {
   $form['created'] = array(
     '#type' => 'item',
     '#title' => t('Created'),
-    '#value' => format_date($token->created),
+    '#markup' => format_date($token->created),
   );
 
   $form['changed'] = array(
     '#type' => 'item',
     '#title' => t('Changed'),
-    '#value' => format_date($token->changed),
+    '#markup' => format_date($token->changed),
   );
 
   $form['key'] = array(
     '#type' => 'item',
     '#title' => t('Key'),
-    '#value' => $token->key,
+    '#markup' => $token->key,
   );
 
   if ($token->in_database) {
@@ -117,7 +121,7 @@ function oauth_common_form_authorization($form_state, $token) {
       '#type' => 'item',
       '#prefix' => '<div id="token-secret-wrapper">',
       '#title' => t('Secret'),
-      '#value' => substr($token->secret, 0, 6) . '...',
+      '#markup' => substr($token->secret, 0, 6) . '...',
     );
 
     $ahah_path = "user/{$token->uid}/oauth/authorizations/{$token->key}/ahah/secret";
@@ -136,7 +140,7 @@ function oauth_common_form_authorization($form_state, $token) {
     $form['secret'] = array(
       '#type' => 'item',
       '#title' => t('Secret'),
-      '#value' => $token->secret
+      '#markup' => $token->secret
     );
   }
 
@@ -204,7 +208,7 @@ function oauth_common_form_authorization_delete($form_state, $user, $token) {
 
   drupal_set_title(t('Deleting authorization for "@consumer"', array(
     '@consumer' => $consumer->name,
-  )));
+  )), PASS_THROUGH);
 
   $form = array(
     'token_object' => array(
@@ -225,14 +229,14 @@ function oauth_common_form_authorization_delete($form_state, $user, $token) {
 
   $form['description'] = array(
     '#type' => 'item',
-    '#value' => t('Are you sure that you want to delete the authorization for "@consumer"?', array(
+    '#markup' => t('Are you sure that you want to delete the authorization for "@consumer"?', array(
       '@consumer' => $consumer->name,
     )),
   );
 
   $form['cancel'] = array(
     '#type' => 'item',
-    '#value' => l(t('Cancel'), sprintf($cancel_url, $user->uid, $token->key)),
+    '#markup' => l(t('Cancel'), sprintf($cancel_url, $user->uid, $token->key)),
   );
 
   $form['submit'] = array(

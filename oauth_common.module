@@ -15,13 +15,13 @@ define('OAUTH_COMMON_VERSION_1_RFC', 2); // The RFC 5849 1.0 spec
 //TODO: Move provider ui related pages to provider ui
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function oauth_common_theme() {
   return array(
     'oauth_common_auth_level' => array(
       'template' => 'oauth_common_auth_level',
-      'arguments' => array(
+      'variables' => array(
         'element' => array(),
         'value' => NULL,
       ),
@@ -30,28 +30,40 @@ function oauth_common_theme() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_permission().
  */
-function oauth_common_perm() {
+function oauth_common_permission() {
   $permissions = array(
-    'oauth authorize any consumers',
-    'oauth register any consumers',
-    'administer oauth',
-    'administer consumers',
+    'oauth authorize any consumers' => array(
+      'title' => t('Authorize any OAuth consumers'),
+    ),
+    'oauth register any consumers' => array(
+      'title' => t('Register any OAuth consumers'),
+    ),
+    'administer oauth' => array(
+      'title' => t('Administer OAuth'),
+    ),
+    'administer consumers' => array(
+      'title' => t('Administer OAuth consumers'),
+    ),
   );
 
   // Add seperate permissions for creating and
   // authorizing consumers in each context.
   foreach (oauth_common_context_list() as $name => $title) {
-    $permissions[] = sprintf('oauth register consumers in %s', $name);
-    $permissions[] = sprintf('oauth authorize consumers in %s', $name);
+    $permissions[sprintf('oauth register consumers in %s', $name)] = array(
+      'title' => t('Register OAuth consumers in %context', array('%context' => $title)),
+    );
+    $permissions[sprintf('oauth authorize consumers in %s', $name)] = array(
+      'title' => t('Authorize OAuth consumers in %context', array('%context' => $title)),
+    );
   }
 
   return $permissions;
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function oauth_common_menu() {
   $menu = array();
@@ -61,7 +73,7 @@ function oauth_common_menu() {
     'file' => 'oauth_common.admin.inc',
   );
 
-  $menu['admin/settings/oauth'] = array(
+  $menu['admin/config/services/oauth'] = array(
     'title' => 'OAuth',
     'description' => 'Settings for OAuth',
     'page callback' => 'drupal_get_form',
@@ -69,7 +81,7 @@ function oauth_common_menu() {
     'type' => MENU_NORMAL_ITEM,
   ) + $admin_base;
 
-  $menu['admin/settings/oauth/settings'] = array(
+  $menu['admin/config/services/oauth/settings'] = array(
     'title' => 'Settings',
     'description' => 'Settings for OAuth',
     'page callback' => 'drupal_get_form',
@@ -164,23 +176,27 @@ function oauth_common_provider_token_load($tid) {
 }
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
  */
 function oauth_common_cron() {
-  db_query("DELETE t, pt FROM {oauth_common_token} t LEFT JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid
-    WHERE t.expires != 0 AND t.expires <= %d", array(
-      ':now' => time(),
-  ));
+  $token_condition = db_and()->condition('expires', 0, '<>')->condition('expires', REQUEST_TIME, '<=');
+
+  db_delete('oauth_common_provider_token')
+    ->condition('tid', db_select('oauth_common_token', 't')->condition($token_condition)->fields('t', array('tid')), 'IN')
+    ->execute();
+
+  db_delete('oauth_common_token')
+    ->condition($token_condition)
+    ->execute();
 
   // Should 300 be overriden in DrupalOAuthServer and made configurable?
-  db_query("DELETE FROM {oauth_common_nonce}
-    WHERE `timestamp` < %d", array(
-      ':now' => time() - 300,
-  ));
+  db_delete('oauth_common_nonce')
+    ->condition('timestamp', REQUEST_TIME - 300, '<')
+    ->execute();
 }
 
 /**
- * Implementation of hook_oauth_default_contexts().
+ * Implements hook_oauth_default_contexts().
  */
 function oauth_common_default_oauth_common_context() {
   $contexts = array();
@@ -218,29 +234,34 @@ function oauth_common_default_oauth_common_context() {
 }
 
 /**
- * Implementation of hook_user().
+ * Implements hook_user_delete().
  */
-function oauth_common_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'delete') {
-    // Delete all tokens and consumers related to a user
-    module_load_include('inc', 'oauth_common');
-    db_query("DELETE c, pc, t, pt FROM {oauth_common_consumer} c
-      INNER JOIN {oauth_common_provider_consumer} pc ON pc.csid = c.csid
-      LEFT JOIN {oauth_common_token} t ON t.csid = c.csid
-      LEFT JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid
-      WHERE pc.uid = %d", array(
-        ':uid' => $account->uid,
-      ));
-    db_query("DELETE t, pt FROM {oauth_common_token} t
-      LEFT JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid
-      WHERE uid = %d", array(
-        ':uid' => $account->uid,
-      ));
-  }
+function oauth_common_user_delete($account) {
+  // Delete all tokens and consumers related to a user
+  module_load_include('inc', 'oauth_common');
+
+  $consumer_condition = db_select('oauth_common_consumer', 'c')->condition($condition)->fields('c', array('csid'));
+  $token_condition = db_or()->condition('uid', $$account->uid)->condition('csid', $consumer_condition, 'IN');
+
+  db_delete('oauth_common_provider_token')
+    ->condition('tid', db_select('oauth_common_token', 't')->condition($token_condition)->fields('t', array('tid')), 'IN')
+    ->execute();
+
+  db_delete('oauth_common_token')
+    ->condition($token_condition)
+    ->execute();
+
+  db_delete('oauth_common_provider_consumer')
+    ->condition('csid', $consumer_condition, 'IN')
+    ->execute();
+
+  db_delete('oauth_common_consumer')
+    ->condition('uid', $account->uid)
+    ->execute();
 }
 
 /**
- * Implementation of hook_xrds().
+ * Implements hook_xrds().
  */
 function services_oauth_xrds() {
   $xrds = array();
@@ -404,7 +425,7 @@ function oauth_common_get_request_token($consumer_token, $request_endpoint = '/o
  */
 function oauth_common_get_user_provider_tokens($uid) {
   $res = db_query("SELECT t.*, pt.created, pt.changed, pt.services, pt.authorized FROM {oauth_common_token} t
-    INNER JOIN {oauth_common_provider_token} pt WHERE t.uid = %d AND t.type = %d", array(
+    INNER JOIN {oauth_common_provider_token} pt WHERE t.uid = :uid AND t.type = :type", array(
       ':uid'  => $uid,
       ':type' => OAUTH_COMMON_TOKEN_TYPE_ACCESS,
     ));
@@ -511,7 +532,10 @@ function oauth_common_context_save($context) {
  * @return void
  */
 function oauth_common_context_delete($context) {
-  db_query("DELETE FROM {oauth_common_context} WHERE name = '%s' AND cid = %d", $context->name, $context->cid);
+  db_delete('oauth_common_context')
+    ->condition('name', $context->name)
+    ->condition('cid', $context->cid)
+    ->execute();
 }
 
 /**
@@ -552,7 +576,7 @@ function oauth_common_context_list() {
 function _oauth_common_version() {
   static $version;
   if (!isset($version)) {
-    $info = db_result(db_query("SELECT info FROM {system} WHERE name = 'oauth_common'"));
+    $info = db_query("SELECT info FROM {system} WHERE name = 'oauth_common'")->fetchField();
     $info = $info ? unserialize($info) : FALSE;
     if (!$info || empty($info['version'])) {
       $version = OAUTH_COMMON_CODE_BRANCH;

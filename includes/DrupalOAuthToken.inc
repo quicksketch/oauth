@@ -51,7 +51,7 @@ class DrupalOAuthToken extends OAuthToken {
     $primary = $update ? array('tid') : array();
 
     if ($this->consumer->provider_consumer) {
-      $this->changed = time();
+      $this->changed = REQUEST_TIME;
 
       $values = array(
         'token_key'  => $this->key,
@@ -64,7 +64,7 @@ class DrupalOAuthToken extends OAuthToken {
         $values['tid'] = $this->tid;
       }
       else {
-        $this->created = time();
+        $this->created = REQUEST_TIME;
         $values['created'] = $this->created;
       }
 
@@ -123,11 +123,15 @@ class DrupalOAuthToken extends OAuthToken {
    */
   public static function deleteToken($key, $consumer) {
     //TODO: Ensure backwards compatibility
-    db_query("DELETE t, pt FROM {oauth_common_token} t LEFT JOIN {oauth_common_provider_token} pt ON t.tid = pt.tid
-      WHERE t.key_hash = '%s' AND t.csid = %d", array(
-      ':key_hash' => sha1($key),
-      ':consumer' => $consumer->csid,
-    ));
+    $condition = db_and()->condition('key_hash', sha1($key))->condition('csid', $consumer->csid);
+
+    db_delete('oauth_common_provider_token')
+      ->condition('tid', db_select('oauth_common_token', 't')->condition($condition)->fields('t', array('tid')), 'IN')
+      ->execute();
+
+    db_delete('oauth_common_token')
+      ->condition($condition)
+      ->execute();
   }
 
   /**
@@ -157,35 +161,32 @@ class DrupalOAuthToken extends OAuthToken {
    *  The loaded token object or FALSE if load failed
    */
   public static function loadByKey($key, $consumer = FALSE, $type = OAUTH_COMMON_TOKEN_TYPE_ACCESS) {
-    $fields = 't.*';
-    $join   = '';
-    $where  = "t.key_hash = '%s'";
-    $values = array(
-      ':key_hash' => sha1($key),
-    );
+    $query = db_select('oauth_common_token', 't');
+
+    $query
+      ->condition('t.key_hash', sha1($key))
+      ->fields('t');
 
     // Only add if defined - needed for backwards compatibility with deprecated DrupalOAuthToken::load() from 6.x-3.0-beta3
     if ($type !== FALSE) {
-      $where .= ' AND t.type = %d';
-      $values[':type'] = $type;
+      $query->condition('t.type', $type);
     }
 
     if (!$consumer || is_object($consumer) && $consumer->provider_consumer) {
-      $fields .= ', pt.created, pt.changed, pt.services, pt.authorized';
-      $join = 'INNER JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid';
+      $query->join('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+      $query->fields('pt', array('created', 'changed', 'services', 'authorized'));
     }
 
     // Only fetch non-provider tokens - needed for backwards compatibility with deprecated DrupalOAuthToken::load() from 6.x-3.0-beta3
     if ($consumer === TRUE) {
-      $join = 'LEFT JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid';
-      $where .= ' AND pt.tid IS NULL';
+      $query->leftJoin('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+      $query->isNull('pt.tid');
     }
     else if ($consumer) {
-      $where .= ' AND t.csid = %d';
-      $values[':consumer'] = $consumer->csid;
+      $query->condition('t.csid', $consumer->csid);
     }
 
-    return self::fromResult(db_query("SELECT " . $fields . " FROM {oauth_common_token} t " . $join . " WHERE " . $where, $values), $consumer);
+    return self::fromResult($query->execute(), $consumer);
   }
 
   /**
@@ -199,17 +200,18 @@ class DrupalOAuthToken extends OAuthToken {
    *  The loaded token object or FALSE if load failed
    */
   public static function loadById($tid, $load_provider_data = TRUE) {
-    $fields = 't.*';
-    $join   = '';
+    $query = db_select('oauth_common_token', 't');
+
+    $query
+      ->condition('t.tid', $tid)
+      ->fields('t');
 
     if ($load_provider_data) {
-      $fields .= ', pt.created, pt.changed, pt.services, pt.authorized';
-      $join = 'INNER JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid';
+      $query->join('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+      $query->fields('pt', array('created', 'changed', 'services', 'authorized'));
     }
 
-    return self::fromResult(db_query("SELECT " . $fields . " FROM {oauth_common_token} t " . $join . " WHERE t.tid = %d", array(
-      ':tid'  => $tid,
-    )));
+    return self::fromResult($query->execute());
   }
 
   /**
@@ -222,7 +224,7 @@ class DrupalOAuthToken extends OAuthToken {
    */
   public static function fromResult($res, $consumer = FALSE) {
     //TODO: Ensure this works with old inputs?
-    if ($data = db_fetch_array($res)) {
+    if ($data = $res->fetchAssoc()) {
       if (isset($data['services'])) {
         $data['services'] = json_decode($data['services']);
       }

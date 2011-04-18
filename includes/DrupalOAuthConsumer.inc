@@ -50,7 +50,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
     $primary = $update ? array('csid') : array();
 
     if ($this->provider_consumer) {
-      $this->changed = time();
+      $this->changed = REQUEST_TIME;
 
       $values = array(
         'consumer_key'  => $this->key,
@@ -66,7 +66,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
         $values['csid'] = $this->csid;
       }
       else {
-        $this->created = time();
+        $this->created = REQUEST_TIME;
         $values['created'] = $this->created;
       }
 
@@ -120,13 +120,17 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    */
   public static function deleteConsumer($csid) {
     //TODO: Add compatibility layer?
-    db_query("DELETE c, pc, t, pt FROM {oauth_common_consumer} c
-      LEFT JOIN {oauth_common_provider_consumer} pc ON pc.csid = c.csid
-      LEFT JOIN {oauth_common_token} t ON t.csid = c.csid
-      LEFT JOIN {oauth_common_provider_token} pt ON pt.tid = t.tid
-      WHERE c.csid = %d", array(
-      ':csid' => $csid,
-    ));
+    $condition = db_and()->condition('csid', $csid);
+
+    db_delete('oauth_common_provider_token')
+      ->condition('tid', db_select('oauth_common_token', 't')->condition($condition)->fields('t', array('tid')), 'IN')
+      ->execute();
+
+    foreach (array('oauth_common_token', 'oauth_common_provider_consumer', 'oauth_common_consumer') as $table) {
+      db_delete($table)
+        ->condition($condition)
+        ->execute();
+    }
   }
 
   /**
@@ -155,17 +159,18 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    *  The loaded consumer object or FALSE if load failed
    */
   public static function loadById($csid, $load_provider_data = TRUE) {
-    $fields = 'c.csid, c.consumer_key, c.secret, c.configuration';
-    $join = '';
+    $query = db_select('oauth_common_consumer', 'c');
+
+    $query
+      ->condition('c.csid', $csid)
+      ->fields('c', array('csid', 'consumer_key', 'secret', 'configuration'));
 
     if ($load_provider_data) {
-      $fields .= ', pc.created, pc.changed, pc.uid, pc.name, pc.context, pc.callback_url';
-      $join = 'LEFT JOIN {oauth_common_provider_consumer} pc ON pc.csid = c.csid';
+      $query->leftJoin('oauth_common_provider_consumer', 'pc', 'pc.csid = c.csid');
+      $query->fields('pc', array('created', 'changed', 'uid', 'name', 'context', 'callback_url'));
     }
 
-    return self::fromResult(db_query("SELECT " . $fields . " FROM {oauth_common_consumer} c " . $join . " WHERE c.csid = %d", array(
-      ':csid' => $csid,
-    )));
+    return self::fromResult($query->execute());
   }
 
   /**
@@ -179,17 +184,26 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    *  The loaded consumer object or FALSE if load failed
    */
   public static function loadProviderByKey($key, $provider = TRUE) {
-    // Only INNER supported - LEFT is only for backwards compatability with deprecated DrupalOAuthConsumer::load() from 6.x-3.0-beta3
-    $join = $provider ? 'INNER' : 'LEFT';
-    // For backwards compatibility with deprecated DrupalOAuthConsumer::load() from 6.x-3.0-beta3
-    $where = $provider ? '' : ' AND pc.csid IS NULL';
-    // For backwards compatibility with deprecated DrupalOAuthConsumer::load() from 6.x-3.0-beta3
-    $fields = $provider ? 'pc.*, c.secret, c.configuration' : 'c.csid, c.consumer_key, c.secret, c.configuration, pc.created, pc.changed, pc.uid, pc.name, pc.context, pc.callback_url';
+    $query = db_select('oauth_common_consumer', 'c');
 
-    $query = "SELECT " . $fields . " FROM {oauth_common_consumer} c " . $join . " JOIN {oauth_common_provider_consumer} pc ON pc.csid = c.csid WHERE c.key_hash = '%s'" . $where;
-    return self::fromResult(db_query($query, array(
-      ':key_hash' => sha1($key),
-    )));
+    $query
+      ->condition('c.key_hash', sha1($key))
+      ->fields('c', array('secret', 'configuration'));
+
+    if ($provider) {
+      $query->join('oauth_common_provider_consumer', 'pc', 'pc.csid = c.csid');
+      $query->fields('pc');
+    }
+    else {
+      // For backwards compatibility with deprecated DrupalOAuthConsumer::load() from 6.x-3.0-beta3
+      $query->leftJoin('oauth_common_provider_consumer', 'pc', 'pc.csid = c.csid');
+      $query
+        ->fields('c', array('csid', 'consumer_key'))
+        ->fields('pc', array('created', 'changed', 'uid', 'name', 'context', 'callback_url'))
+        ->isNull('pc.csid');
+    }
+
+    return self::fromResult($query->execute());
   }
 
   /**
@@ -202,7 +216,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    */
   public static function fromResult($res) {
     //TODO: Ensure this works with old inputs?
-    if ($data = db_fetch_array($res)) {
+    if ($data = $res->fetchAssoc()) {
       if (!empty($data['configuration'])) {
         $data['configuration'] = unserialize($data['configuration']);
       }
