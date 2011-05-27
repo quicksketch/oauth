@@ -15,21 +15,6 @@ define('OAUTH_COMMON_VERSION_1_RFC', 2); // The RFC 5849 1.0 spec
 //TODO: Move provider ui related pages to provider ui
 
 /**
- * Implements hook_theme().
- */
-function oauth_common_theme() {
-  return array(
-    'oauth_common_auth_level' => array(
-      'template' => 'oauth_common_auth_level',
-      'variables' => array(
-        'element' => array(),
-        'value' => NULL,
-      ),
-    ),
-  );
-}
-
-/**
  * Implements hook_permission().
  */
 function oauth_common_permission() {

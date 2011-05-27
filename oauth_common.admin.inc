@@ -285,38 +285,37 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
   $form['authorization_levels'] = array(
     '#type' => 'fieldset',
     '#title' => t('Authorization levels'),
-    '#tree' => FALSE,
-    'ahah_wrapper' => array(
-      '#markup' => '<div id="auth-level-wrapper"></div>',
-      '#weight' => 9,
-    ),
+    '#tree' => TRUE,
+    '#prefix' => '<div id="auth-level-wrapper">',
+    '#suffix' => '</div>',
     'add_authorization_level' => array(
-      '#type' => 'button',
+      '#type' => 'submit',
       '#value' => t('Add authorization level'),
       '#weight' => 10,
-      '#ahah' => array(
-        'path' => 'admin/config/services/oauth/ahah/add-auth-level',
+      '#submit' => array('oauth_common_edit_form_auth_level_ajax_add'),
+      '#limit_validation_errors' => array(),
+      '#ajax' => array(
+        'callback' => 'oauth_common_edit_form_auth_level_ajax_callback',
         'wrapper' => 'auth-level-wrapper',
-        'method' => 'append',
       )
     ),
   );
 
-  $i = 0;
   foreach ($context->authorization_levels as $name => $level) {
     $title = !empty($name) ? check_plain($name) : t('New level');
     if ($title == '*') {
       $title = t('Full access');
     }
-    $l = oauth_common_edit_form_auth_level($context, $i, $title, $name, $level);
+    $l = oauth_common_edit_form_auth_level($context, $title, $name, $level);
     $form['authorization_levels'][] = $l;
-    $i++;
   }
 
-  $form['authorization_level_count'] = array(
-    '#type' => 'value',
-    '#value' => $i,
-  );
+  if (!isset($form_state['authorization_level_new'])) {
+    $form_state['authorization_level_new'] = 0;
+  }
+  for ($i = 0; $i < $form_state['authorization_level_new']; $i++) {
+    $form['authorization_levels'][] = oauth_common_edit_form_auth_level($context, t('Authorization level'));
+  }
 
   $form['submit'] = array(
     '#type'  => 'submit',
@@ -336,83 +335,68 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
  * @param array $level
  * @return array.
  */
-function oauth_common_edit_form_auth_level($context, $idx, $title, $name = '', $level = array()) {
+function oauth_common_edit_form_auth_level($context, $title, $name = '', $level = array()) {
   $level = $level + array(
     'title' => '',
     'description' => '',
   );
 
   $element = array(
-    '#theme' => 'oauth_common_auth_level',
-    "l_{$idx}_name" => array(
+    "name" => array(
       '#type' => 'textfield',
       '#title' => t('Name'),
       '#description' => t('The name of the authorization level.'),
       '#size' => 40,
       '#maxlength' => 32,
       '#default_value' => $name,
-      '#oauth_common_panel' => 'left',
     ),
-    "l_{$idx}_title" => array(
+    "title" => array(
       '#type' => 'textfield',
       '#title' => t('Title'),
       '#description' => t('The title of the authorization level.'),
       '#size' => 40,
       '#maxlength' => 100,
       '#default_value' => $level['title'],
-      '#oauth_common_panel' => 'left',
     ),
-    "l_{$idx}_default" => array(
+    "default" => array(
       '#type' => 'checkbox',
       '#title' => t('Selected by default'),
       '#description' => t('Whether the authentication level should be checked by default.'),
       '#default_value' => is_array($context->authorization_options['default_authorization_levels']) && in_array($name, $context->authorization_options['default_authorization_levels']),
-      '#oauth_common_panel' => 'left',
     ),
-    "l_{$idx}_delete" => array(
+    "delete" => array(
       '#type' => 'checkbox',
       '#title' => t('Delete'),
       '#description' => t('Check this to delete the authorization level.'),
       '#default_value' => FALSE,
-      '#oauth_common_panel' => 'left',
     ),
-    "l_{$idx}_description" => array(
+    "description" => array(
       '#type' => 'textarea',
       '#title' => t('Description'),
       '#description' => t('The description of the authorization level.'),
       '#default_value' => $level['description'],
-      '#oauth_common_panel' => 'right',
     ),
   );
   return $element;
 }
 
 /**
- * Menu system callback for adding auth levels
+ * Submit handler for adding auth levels
  *
  * @return void
  */
-function oauth_common_ahah_add_auth_level() {
-  $cached_form_state = array();
-  $form = form_get_cache($_POST['form_build_id'], $cached_form_state);
-  $context = $form['context_object']['#value'];
-  $idx = $form['authorization_level_count']['#value'];
-  $form['authorization_level_count']['#value'] = $idx + 1;
-  $level = oauth_common_edit_form_auth_level($context, $idx, t('Authorization level'));
-  $form['authorization_levels'][] = $level;
+function oauth_common_edit_form_auth_level_ajax_add($form, &$form_state) {
+  $form_state['authorization_level_new']++;
+  $form_state['rebuild'] = TRUE;
+}
 
-  form_set_cache($_POST['form_build_id'], $form, $cached_form_state);
-
-  $form_state = array(
-    'submitted' => FALSE,
-  );
-  $level = form_builder('oauth_common_ahah_add_auth_level', $level, $form_state);
-  $output = drupal_render($level);
-
-  drupal_json_output(array(
-    'status' => TRUE,
-    'data' => $output,
-  ));
+/**
+ * AJAX callback for dealing with auth levels
+ *
+ * @return void
+ */
+function oauth_common_edit_form_auth_level_ajax_callback($form, $form_state) {
+  return $form['authorization_levels'];
 }
 
 /**
@@ -495,27 +479,6 @@ function oauth_common_edit_form_context_validate(&$form, &$form_state) {
 }
 
 /**
- * Helper function to create a authorization level array from form values.
- *
- * @param string $idx
- * @param string $values
- * @return array
- */
-function _oauth_common_auth_level_from_values($idx, $values) {
-  $level = array(
-    'name' => NULL,
-    'title' => NULL,
-    'description' => NULL,
-    'default' => FALSE,
-    'delete' => FALSE,
-  );
-  foreach (array_keys($level) as $key) {
-    $level[$key] = $values["l_{$idx}_{$key}"];
-  }
-  return $level;
-}
-
-/**
  * Process submission of the mini panel edit form.
  */
 function oauth_common_edit_form_context_submit($form, &$form_state) {
@@ -548,9 +511,8 @@ function oauth_common_edit_form_context_submit($form, &$form_state) {
   $levels = array();
   $default_levels = array();
   $level_count = $values['authorization_level_count'];
-  for ($idx = 0; $idx < $level_count; $idx++) {
-    $level = _oauth_common_auth_level_from_values($idx, $values);
-    if (!empty($level['name']) && !$level['delete']) {
+  foreach ($values['authorization_levels'] as $key => $level) {
+    if (is_numeric($key) && !empty($level['name']) && !$level['delete']) {
       $name = $level['name'];
       if ($level['default']) {
         $default_levels[] = $name;

@@ -37,11 +37,6 @@ function oauth_common_providerui_menu() {
     'weight'         => 10,
   ) + $admin_base;
 
-  $menu['admin/config/services/oauth/ahah/add-auth-level'] = array(
-    'page callback'  => 'oauth_common_ahah_add_auth_level',
-    'type'           => MENU_CALLBACK,
-  ) + $admin_base;
-
   $menu['admin/config/services/oauth/%oauth_common_context/export'] = array(
     'title'          => 'Export context',
     'page callback'  => 'drupal_get_form',
