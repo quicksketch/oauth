@@ -171,22 +171,26 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     '#value' => $context,
   );
 
-  $form['name'] = array(
-    '#type'          => 'textfield',
-    '#size'          => 24,
-    '#maxlength'     => 32,
-    '#default_value' => $context->name,
-    '#title'         => t('Context name'),
-    '#description'   => t('A unique name used to identify this preset internally. It must be only be alpha characters and underscores. No spaces, numbers or uppercase characters.'),
-    '#required'      => TRUE,
-  );
-
   $form['title'] = array(
     '#type'          => 'textfield',
     '#size'          => 24,
     '#maxlength'     => 100,
     '#default_value' => $context->title,
     '#title'         => t('Context title'),
+    '#required'      => TRUE,
+  );
+
+  $form['name'] = array(
+    '#type'          => 'machine_name',
+    '#size'          => 24,
+    '#maxlength'     => 32,
+    '#default_value' => $context->name,
+    '#title'         => t('Context name'),
+    '#description'   => t('A unique name used to identify this preset internally. It must be only be alpha characters and underscores. No spaces, numbers or uppercase characters.'),
+    '#machine_name' => array(
+      'source' => array('title'),
+      'exists' => 'oauth_common_edit_form_context_exists',
+    ),
     '#required'      => TRUE,
   );
 
@@ -409,6 +413,25 @@ function oauth_common_ahah_add_auth_level() {
     'status' => TRUE,
     'data' => $output,
   ));
+}
+
+/**
+ * Check whether a given context exists.
+ *
+ * @param $name the name parameter for the context.
+ * @return boolean
+ */
+function oauth_common_edit_form_context_exists($name) {
+  $exists = FALSE;
+
+  if (!empty($name)) {
+    $result = db_query('SELECT cid FROM {oauth_common_context} WHERE name = :name', array(
+      ':name' => $name
+    ))->fetchField();
+    $exists = $result ? TRUE : FALSE;
+  }
+
+  return $exists;
 }
 
 /**
