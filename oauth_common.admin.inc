@@ -424,42 +424,19 @@ function oauth_common_edit_form_context_exists($name) {
 function oauth_common_edit_form_context_validate(&$form, &$form_state) {
   $values = $form_state['values'];
 
-  // Test uniqueness of name:
-  if (preg_match("/[^A-Za-z0-9_]/", $values['name'])) {
-    form_error($form['name'], t('Context name must be alphanumeric or underscores only.'));
-  }
-  else if (!empty($values['name'])) {
-    $query = db_select('oauth_common_context', 'c');
-
-    $query
-      ->condition('c.name', $values['name'])
-      ->addField('c', 'cid');
-
-    if (!empty($values['cid']) && is_numeric($values['cid'])) {
-      $query->condition('c.cid', $values['cid'], '<>');
-    }
-    if ($query->execute()->rowCount()) {
-      form_error($form['name'], t('Context name must be unique.'));
-    }
-  }
-
   // Check that the authorization level names are unique within the context
   $levels = array();
-  $auth_count = $values['authorization_level_count'];
   $default_exists = FALSE;
-  $level_count = $values['authorization_level_count'];
-  for ($idx = 0; $idx < $level_count; $idx++) {
-    $level = _oauth_common_auth_level_from_values($idx, $values);
-
-    if (!empty($level['name']) && !$level['delete']) {
+  foreach ($values['authorization_levels'] as $key => $level) {
+    if (is_numeric($key) && !empty($level['name']) && !$level['delete']) {
       if (!empty($levels[$level['name']])) {
-        form_error($form["l_{$idx}_name"], t('Authorization level name must be unique.'));
+        form_error($form['authorization_levels'][$key]['name'], t('Authorization level name must be unique.'));
       }
       else if (preg_match("/[^A-Za-z0-9_\*]/", $level['name'])) {
-        form_error($form["l_{$idx}_name"], t('Authorization level name must be alphanumeric or underscores only.'));
+        form_error($form['authorization_levels'][$key]['name'], t('Authorization level name must be alphanumeric or underscores only.'));
       }
       if (empty($level['title'])) {
-        form_error($form["l_{$idx}_title"], t('Authorization levels must have a title.'));
+        form_error($form['authorization_levels'][$key]['title'], t('Authorization levels must have a title.'));
       }
       $default_exists = $default_exists || $level['default'];
       $levels[$level['name']] = TRUE;
@@ -510,7 +487,6 @@ function oauth_common_edit_form_context_submit($form, &$form_state) {
   // Set the auth levels and default levels for the context
   $levels = array();
   $default_levels = array();
-  $level_count = $values['authorization_level_count'];
   foreach ($values['authorization_levels'] as $key => $level) {
     if (is_numeric($key) && !empty($level['name']) && !$level['delete']) {
       $name = $level['name'];
