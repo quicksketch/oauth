@@ -1,5 +1,6 @@
 name = OAuth
 description = Provides OAuth functionality
+configure = admin/config/services/oauth
 package = "OAuth"
 
 recommends[] = ctools
