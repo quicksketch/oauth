@@ -231,21 +231,21 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     '#description' => t('The title of the authorization page.'),
     '#size' => 40,
     '#maxlength' => 255,
-    '#default_value' => $context->authorization_options['page_title'],
+    '#default_value' => empty($context->authorization_options['page_title']) ? '' : $context->authorization_options['page_title'],
   );
 
   $form['authorization_options']['message'] = array(
     '#type' => 'textarea',
     '#title' => t('Message'),
     '#description' => t('The message shown to the user when authorizing.'),
-    '#default_value' => $context->authorization_options['message'],
+    '#default_value' => empty($context->authorization_options['message']) ? '' : $context->authorization_options['message'],
   );
 
   $form['authorization_options']['warning'] = array(
     '#type' => 'textarea',
     '#title' => t('Warning'),
     '#description' => t('The warning shown to the user when authorizing.'),
-    '#default_value' => $context->authorization_options['warning'],
+    '#default_value' => empty($context->authorization_options['warning']) ? '' : $context->authorization_options['warning'],
   );
 
   $form['authorization_options']['deny_access_title'] = array(
@@ -254,7 +254,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     '#description' => t('The title of deny access link.'),
     '#size' => 40,
     '#maxlength' => 255,
-    '#default_value' => $context->authorization_options['deny_access_title'],
+    '#default_value' => empty($context->authorization_options['deny_access_title']) ? '' : $context->authorization_options['deny_access_title'],
   );
 
   $form['authorization_options']['grant_access_title'] = array(
@@ -263,7 +263,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     '#description' => t('The title of grant access button.'),
     '#size' => 40,
     '#maxlength' => 255,
-    '#default_value' => $context->authorization_options['grant_access_title'],
+    '#default_value' => empty($context->authorization_options['grant_access_title']) ? '' : $context->authorization_options['grant_access_title'],
   );
 
   $form['authorization_options']['access_token_lifetime'] = array(

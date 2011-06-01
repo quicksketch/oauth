@@ -1,6 +1,4 @@
-// $Id$
-
-OAuth 6.x-3.0-beta4, 2011-XX-XX
+OAuth 6.x-3.0-beta4, 2011-04-06
 ------------------------------
 by voxpelli: Better coding style
 #1002482 by voxpelli: Large database refactoring focused on basing relations on internal id numbers
@@ -10,6 +8,7 @@ by voxpelli: Updated to use Autoload 6.x-2.0:s D7 backport for specifying includ
 by voxpelli: Don't show key/secret on consumer adding
 #1017220 by voxpelli: Deactivated body_hash-checking when Inpustream isn't installed
 #1024812 by voxpelli: Fix for deleting consumer
+#857584 by voxpelli: Make SHA1 the default signature method in client
 
 OAuth 6.x-3.0-beta3, 2010-11-05
 ------------------------------
