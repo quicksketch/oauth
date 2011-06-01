@@ -9,10 +9,10 @@
  *  An array of consumer info
  */
 function oauth_common_user_consumers($uid) {
-  $result = db_query($query = 'SELECT c.secret, c.configuration, pc.*
+  $result = db_query('SELECT c.secret, c.configuration, pc.*
     FROM {oauth_common_consumer} c
     INNER JOIN {oauth_common_provider_consumer} pc ON pc.csid = c.csid
-    WHERE pc.uid = %d' . $where, array(':uid' => $uid));
+    WHERE pc.uid = %d', array(':uid' => $uid));
 
   $consumers = array();
   while ($consumer = DrupalOAuthConsumer::fromResult($result)) {
