@@ -124,14 +124,12 @@ function oauth_common_form_authorization($form_state, $token) {
       '#markup' => substr($token->secret, 0, 6) . '...',
     );
 
-    $ahah_path = "user/{$token->uid}/oauth/authorizations/{$token->key}/ahah/secret";
     $form['show_secret'] = array(
       '#type' => 'button',
       '#value' => t('Show secret'),
-      '#ahah' => array(
-        'path' => $ahah_path,
+      '#ajax' => array(
+        'callback' => 'oauth_common_form_authorization_secret_ajax_callback',
         'wrapper' => 'token-secret-wrapper',
-        'method' => 'replace',
       ),
       '#suffix' => '</div>',
     );
@@ -156,6 +154,17 @@ function oauth_common_form_authorization($form_state, $token) {
   );
 
   return $form;
+}
+
+/**
+ * AJAX callback for showing secrets
+ *
+ * @return void
+ */
+function oauth_common_form_authorization_secret_ajax_callback($form, $form_state) {
+  $form['secret']['#markup'] = $form_state['values']['token_object']->secret;
+  $form['secret']['#prefix'] = '';
+  return $form['secret'];
 }
 
 function oauth_common_permissions_form($account, &$form, $consumer, $context, $default_services = array('*')) {

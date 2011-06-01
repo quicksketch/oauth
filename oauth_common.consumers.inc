@@ -150,10 +150,9 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
     $form['show_secret'] = array(
       '#type' => 'button',
       '#value' => t('Show secret'),
-      '#ahah' => array(
-        'path' => "user/{$consumer->uid}/oauth/consumer/{$consumer->csid}/ahah/secret",
+      '#ajax' => array(
+        'callback' => 'oauth_common_form_consumer_secret_ajax_callback',
         'wrapper' => 'consumer-secret-wrapper',
-        'method' => 'replace',
       ),
       '#suffix' => '</div>',
     );
@@ -165,6 +164,17 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
   );
 
   return $form;
+}
+
+/**
+ * AJAX callback for showing secrets
+ *
+ * @return void
+ */
+function oauth_common_form_consumer_secret_ajax_callback($form, $form_state) {
+  $form['secret']['#markup'] = $form_state['values']['consumer_object']->secret;
+  $form['secret']['#prefix'] = '';
+  return $form['secret'];
 }
 
 /**
