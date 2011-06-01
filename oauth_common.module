@@ -21,15 +21,19 @@ function oauth_common_permission() {
   $permissions = array(
     'oauth authorize any consumers' => array(
       'title' => t('Authorize any OAuth consumers'),
+      'restrict access' => TRUE,
     ),
     'oauth register any consumers' => array(
       'title' => t('Register any OAuth consumers'),
+      'restrict access' => TRUE,
     ),
     'administer oauth' => array(
       'title' => t('Administer OAuth'),
+      'restrict access' => TRUE,
     ),
     'administer consumers' => array(
       'title' => t('Administer OAuth consumers'),
+      'restrict access' => TRUE,
     ),
   );
 
