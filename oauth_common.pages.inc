@@ -270,7 +270,7 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
   }
 
   // Add services
-  if ($values['full_access']) { // TODO: Full access should be a configurable auth level
+  if (!empty($values['full_access'])) { // TODO: Full access should be a configurable auth level
     $token->services = array('*');
   }
   elseif (!empty($values['levels'])) {
@@ -286,7 +286,9 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
     // Pick the callback url apart and add the token parameter
     $callback = parse_url($consumer->callback_url);
     $query = array();
-    parse_str($callback['query'], $query);
+    if (!empty($callback['query'])) {
+      parse_str($callback['query'], $query);
+    }
     $query['oauth_token'] = $token->key;
     $callback['query'] = http_build_query($query, 'idx_', '&');
 
