@@ -98,15 +98,6 @@ function oauth_common_providerui_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $menu['user/%user/oauth/authorizations/%oauth_common_provider_token/ahah/secret'] = array(
-    'page callback' => 'oauth_common_ahah_secret',
-    'page arguments' => array(4),
-    'access callback' => '_oauth_common_user_access',
-    'access arguments' => array(1, 'oauth authorize consumers'),
-    'file' => 'oauth_common.inc',
-    'type' => MENU_CALLBACK,
-  );
-
   $menu['user/%user/oauth/authorizations/%oauth_common_provider_token/delete'] = array(
     'title' => 'Delete authorization',
     'page callback' => 'drupal_get_form',
@@ -151,15 +142,6 @@ function oauth_common_providerui_menu() {
     'access arguments' => array(4),
     'file' => 'oauth_common.consumers.inc',
     'type' => MENU_LOCAL_TASK,
-  );
-
-  $menu['user/%user/oauth/consumer/%oauth_common_consumer/ahah/secret'] = array(
-    'page callback' => 'oauth_common_ahah_secret',
-    'page arguments' => array(4),
-    'access callback' => 'oauth_common_can_edit_consumer',
-    'access arguments' => array(4),
-    'file' => 'oauth_common.inc',
-    'type' => MENU_CALLBACK,
   );
 
   $menu['user/%user/oauth/consumer/%oauth_common_consumer/delete'] = array(
