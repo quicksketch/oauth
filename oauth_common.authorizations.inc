@@ -148,7 +148,8 @@ function oauth_common_form_authorization($form_state, $token) {
   );
   oauth_common_permissions_form($user, $form['allowed'], $consumer, $context, $token->services);
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
   );
@@ -248,7 +249,8 @@ function oauth_common_form_authorization_delete($form_state, $user, $token) {
     '#markup' => l(t('Cancel'), sprintf($cancel_url, $user->uid, $token->key)),
   );
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete'),
   );

@@ -158,7 +158,8 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
     );
   }
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
   );
@@ -232,10 +233,13 @@ function oauth_common_form_consumer_delete($form_state, $consumer) {
       '#type' => 'item',
       '#markup' => t('Are you sure you want to delete application <strong>@a</strong>?', array('@a' => $consumer->name)),
     ),
-    'delete' => array(
-      '#type' => 'submit',
-      '#title' => t('Delete'),
-      '#default_value' => t('Delete'),
+    'actions' => array(
+      '#type' => 'actions',
+      'delete' => array(
+        '#type' => 'submit',
+        '#title' => t('Delete'),
+        '#default_value' => t('Delete'),
+      )
     ),
   );
 

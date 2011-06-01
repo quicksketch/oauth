@@ -317,7 +317,8 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     $form['authorization_levels'][] = oauth_common_edit_form_auth_level($context, t('Authorization level'));
   }
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type'  => 'submit',
     '#value' => t('Save'),
   );

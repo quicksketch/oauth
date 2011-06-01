@@ -202,7 +202,8 @@ function oauth_common_form_authorize() {
 
     $grant_title = !empty($context->authorization_options['grant_access_title']) ? $context->authorization_options['grant_access_title'] :
       'Grant access';
-    $form['confirm'] = array(
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['confirm'] = array(
       '#type'   => 'submit',
       '#value'  => t($grant_title),
     );
