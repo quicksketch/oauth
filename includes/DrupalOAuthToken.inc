@@ -228,7 +228,7 @@ class DrupalOAuthToken extends OAuthToken {
       }
       $data['in_database'] = TRUE;
 
-      if ($consumer && $consumer->csid == $data['csid']) {
+      if (is_object($consumer) && $consumer->csid == $data['csid']) {
         $token_consumer = $consumer;
       }
       else {
