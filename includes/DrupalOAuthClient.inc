@@ -130,7 +130,7 @@ class DrupalOAuthClient {
     }
 
     if ($this->version > OAUTH_COMMON_VERSION_1 && empty($params['oauth_callback_confirmed'])) {
-      $this->version = OAUTH_1;
+      $this->version = OAUTH_COMMON_VERSION_1;
     }
 
     $this->requestToken = new DrupalOAuthToken($params['oauth_token'], $params['oauth_token_secret'], $this->consumer, array(
