@@ -329,7 +329,7 @@ function oauth_common_callback_request_token() {
     $req = DrupalOAuthRequest::from_request();
     $context = oauth_common_context_from_request($req);
     if (!$context) {
-      throw new Exception('No OAuth context found');
+      throw new OAuthException('No OAuth context found');
     }
     $server = new DrupalOAuthServer($context);
     print $server->fetch_request_token($req);
@@ -348,7 +348,7 @@ function oauth_common_callback_access_token() {
     $req = DrupalOAuthRequest::from_request();
     $context = oauth_common_context_from_request($req);
     if (!$context) {
-      throw new Exception('No OAuth context found');
+      throw new OAuthException('No OAuth context found');
     }
     $server = new DrupalOAuthServer($context);
     $access_token = $server->fetch_access_token($req);
