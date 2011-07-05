@@ -20,6 +20,14 @@ function oauth_common_uninstall() {
 }
 
 /**
+ * Implementation of hook_enable().
+ */
+function oauth_common_enable() {
+  // Makes sure that Autoload stays updated with info about our classes
+  autoload_registry_rebuild();
+}
+
+/**
  * Implementation of hook_schema().
  */
 function oauth_common_schema() {

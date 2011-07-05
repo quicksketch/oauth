@@ -4,6 +4,7 @@ OAuth 6.x-3.0-xxx, xxxx-xx-xx
 #1199360 by Sepehr Lajevardi, voxpelli: Fixed E_NOTICE in OAuth request context loader
 #1199346 by Sepehr Lajevardi: Fixed E_NOTICE in oauth_common_form_consumer_submit()
 #1134444 by grendzy, voxpelli: Warn if Autoload 2.x isn't used
+#1141658 by grendzy, voxpelli: Clear Autoload cache on install
 
 OAuth 6.x-3.0-beta4, 2011-04-06
 ------------------------------
