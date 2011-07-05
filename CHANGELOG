@@ -1,6 +1,7 @@
 OAuth 6.x-3.0-xxx, xxxx-xx-xx
 ------------------------------
 #1155760 by deviantintegral, voxpelli: Catching more exceptions, eg. when the consumer key is incorrect
+#1199360 by Sepehr Lajevardi, voxpelli: Fixed E_NOTICE in OAuth request context loader
 
 OAuth 6.x-3.0-beta4, 2011-04-06
 ------------------------------
