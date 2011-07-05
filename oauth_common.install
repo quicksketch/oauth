@@ -348,6 +348,25 @@ function _oauth_common_provider_token_schema() {
 }
 
 /**
+ * Implements hook_requirements().
+ */
+function oauth_common_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  include_once drupal_get_path('module', 'autoload') . '/autoload.module';
+  if (!function_exists('autoload_registry_rebuild')) {
+    $requirements['autoload_version'] = array(
+      'title' => $t('OAuth'),
+      'description' => $t('Your version of Autoload.module appears to be out of date. OAuth requires at least version 2.x.'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+
+  return $requirements;
+}
+
+/**
  * Implementation of hook_update_N().
  *
  * This update either creates a authorization levels table, or transfers the

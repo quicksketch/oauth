@@ -3,6 +3,7 @@ OAuth 6.x-3.0-xxx, xxxx-xx-xx
 #1155760 by deviantintegral, voxpelli: Catching more exceptions, eg. when the consumer key is incorrect
 #1199360 by Sepehr Lajevardi, voxpelli: Fixed E_NOTICE in OAuth request context loader
 #1199346 by Sepehr Lajevardi: Fixed E_NOTICE in oauth_common_form_consumer_submit()
+#1134444 by grendzy, voxpelli: Warn if Autoload 2.x isn't used
 
 OAuth 6.x-3.0-beta4, 2011-04-06
 ------------------------------
