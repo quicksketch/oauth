@@ -484,7 +484,7 @@ function oauth_common_context_from_request($request) {
     $consumer = DrupalOAuthConsumer::loadProviderByKey($consumer_key);
   }
 
-  if ($consumer) {
+  if (!empty($consumer)) {
     $context = oauth_common_context_load($consumer->context);
   }
 
