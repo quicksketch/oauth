@@ -38,13 +38,13 @@ function oauth_common_page_user_authorizations($account) {
 
     $operations[] = array(
       'title' => t('Edit'),
-      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->key),
+      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->tid),
       'query' => array('destination' => $_GET['q']),
     );
 
     $operations[] = array(
       'title' => t('Delete'),
-      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->key) . '/delete',
+      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->tid) . '/delete',
       'query' => array('destination' => $_GET['q']),
     );
 
@@ -79,8 +79,9 @@ function oauth_common_authorization_add($consumer) {
   return drupal_get_form('oauth_common_form_authorization', $token);
 }
 
-function oauth_common_form_authorization($form_state, $token) {
+function oauth_common_form_authorization($form_id, $form_state) {
   $form = array();
+  $token = $form_state['build_info']['args'][0];
 
   $consumer = $token->consumer;
   $context = oauth_common_context_load($consumer->context);
@@ -146,6 +147,8 @@ function oauth_common_form_authorization($form_state, $token) {
     '#type' => 'fieldset',
     '#title' => t('Permissions'),
   );
+
+  global $user;
   oauth_common_permissions_form($user, $form['allowed'], $consumer, $context, $token->services);
 
   $form['actions'] = array('#type' => 'actions');
