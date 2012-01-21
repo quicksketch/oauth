@@ -79,9 +79,18 @@ function oauth_common_authorization_add($consumer) {
   return drupal_get_form('oauth_common_form_authorization', $token);
 }
 
-function oauth_common_form_authorization($form_id, $form_state) {
+/**
+ * Provide a form to edit and add authorizations. 
+ *
+ * Despite what appears above, this function is actually invoked by 
+ * `drupal_retrieve_form` (by way of `drupal_build_form`, by way of 
+ * `drupal_get_form`), so the second argument isn't the token, but a reference 
+ * to the form state. Luckily, PHP made that incredibly non-obvious by 
+ * neglecting to notify me that this function was being called with one too few 
+ * arguments. Go team.
+ */
+function oauth_common_form_authorization($form_id, &$form_state, $token) {
   $form = array();
-  $token = $form_state['build_info']['args'][0];
 
   $consumer = $token->consumer;
   $context = oauth_common_context_load($consumer->context);
@@ -191,7 +200,7 @@ function oauth_common_permissions_form($account, &$form, $consumer, $context, $d
   }
 }
 
-function oauth_common_form_authorization_submit($form, $form_state) {
+function oauth_common_form_authorization_submit($form, &$form_state) {
   $values = $form_state['values'];
   $token = $values['token_object'];
   $consumer = $token->consumer;
@@ -207,10 +216,18 @@ function oauth_common_form_authorization_submit($form, $form_state) {
   drupal_set_message(t('The @consumer token @token was updated.', array(
     '@consumer' => $consumer->name,
     '@token' => $token->key)));
-  drupal_goto(sprintf('user/%d/applications', $form_state['values']['user']));
+
+  drupal_goto(sprintf('user/%d/applications', $token->uid));
 }
 
-function oauth_common_form_authorization_delete($form_state, $user, $token) {
+/**
+ * Provide a form for deleting an authorization.
+ *
+ * We've got the same symptom here that we do with 
+ * `oauth_common_form_authorization`, i.e., this is actually called by 
+ * `drupal_retrieve_form`.
+ */
+function oauth_common_form_authorization_delete($form_id, &$form_state, $user, $token) {
   $consumer = $token->consumer;
 
   $cancel_url = 'user/%d/oauth/authorizations';
@@ -261,7 +278,7 @@ function oauth_common_form_authorization_delete($form_state, $user, $token) {
   return $form;
 }
 
-function oauth_common_form_authorization_delete_submit($form, $form_state) {
+function oauth_common_form_authorization_delete_submit($form, &$form_state) {
   $values = $form_state['values'];
   $token = $values['token_object'];
   $consumer = $token->consumer;
