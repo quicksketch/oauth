@@ -264,12 +264,12 @@ function oauth_common_form_authorization_delete($form_id, &$form_state, $user, $
     )),
   );
 
-  $form['cancel'] = array(
-    '#type' => 'item',
+  $form['actions'] = array('#type' => 'actions');
+
+  $form['actions']['cancel'] = array(
     '#markup' => l(t('Cancel'), sprintf($cancel_url, $user->uid, $token->key)),
   );
 
-  $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete'),
