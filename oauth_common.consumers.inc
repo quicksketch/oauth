@@ -223,7 +223,7 @@ function oauth_common_form_consumer_submit($form, &$form_state) {
 /**
  * Consumer deletion form.
  */
-function oauth_common_form_consumer_delete($form_state, $consumer) {
+function oauth_common_form_consumer_delete($form, &$form_state, $consumer) {
   $form = array(
     'consumer_object' => array(
       '#type' => 'value',
