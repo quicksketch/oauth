@@ -413,11 +413,16 @@ function oauth_common_get_request_token($consumer_token, $request_endpoint = '/o
  * @return array
  */
 function oauth_common_get_user_provider_tokens($uid) {
-  $res = db_query("SELECT t.*, pt.created, pt.changed, pt.services, pt.authorized FROM {oauth_common_token} t
-    INNER JOIN {oauth_common_provider_token} pt WHERE t.uid = :uid AND t.type = :type", array(
-      ':uid'  => $uid,
-      ':type' => OAUTH_COMMON_TOKEN_TYPE_ACCESS,
-    ));
+  $q = db_select('oauth_common_token', 't')
+    ->condition('t.uid', $uid, '=')
+    ->condition('t.type', OAUTH_COMMON_TOKEN_TYPE_ACCESS, '=');
+
+  $q->join('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+
+  $res = $q->fields('t')
+    ->fields('pt', array('created', 'changed', 'services', 'authorized'))
+    ->execute();
+
   $tokens = array();
   while ($token = DrupalOAuthToken::fromResult($res)) {
     $tokens[] = $token;
