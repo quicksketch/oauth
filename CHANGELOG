@@ -1,3 +1,7 @@
+OAuth 7.x-3.1, 2012--
+------------------------------
+#1529166 by barraponto: implement hook_requirements() to check that cURL library is available.
+
 OAuth 7.x-3.0, 2012-2-8
 ------------------------------
 #1378078 by jobeirne: Make Authorizations editable.
