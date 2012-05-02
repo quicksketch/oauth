@@ -6,6 +6,7 @@ OAuth 6.x-3.0-xxx, xxxx-xx-xx
 #1134444 by grendzy, voxpelli: Warn if Autoload 2.x isn't used
 #1141658 by grendzy, voxpelli: Clear Autoload cache on install
 #1529166 by barraponto: implement hook_requirements()
+#1535764 by bojanz: Signature selection in includes/DrupalOAuthServer.inc is broken.
 
 OAuth 6.x-3.0-beta4, 2011-04-06
 ------------------------------
