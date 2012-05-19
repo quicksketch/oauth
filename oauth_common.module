@@ -15,6 +15,16 @@ define('OAUTH_COMMON_VERSION_1_RFC', 2); // The RFC 5849 1.0 spec
 //TODO: Move provider ui related pages to provider ui
 
 /**
+ * Implements hook_init().
+ *
+ * Adds the OAuth library. This is needed until Libraries API does it.
+ * @see http://drupal.org/node/1092270
+ */
+function oauth_common_init() {
+  require_once(libraries_get_path('oauth') . '/OAuth.php');
+}
+
+/**
  * Implements hook_permission().
  */
 function oauth_common_permission() {

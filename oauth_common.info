@@ -5,10 +5,10 @@ package = "OAuth"
 
 recommends[] = ctools
 suggests[] = inputstream
+dependencies[] = libraries
 
 core = 7.x
 
-files[] = lib/OAuth.php
 files[] = includes/DrupalOAuthServer.inc
 files[] = includes/DrupalOAuthDataStore.inc
 files[] = includes/DrupalOAuthRequest.inc
