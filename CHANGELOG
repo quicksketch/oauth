@@ -7,6 +7,7 @@ OAuth 6.x-3.0-xxx, xxxx-xx-xx
 #1141658 by grendzy, voxpelli: Clear Autoload cache on install
 #1529166 by barraponto: implement hook_requirements()
 #1535764 by bojanz: Signature selection in includes/DrupalOAuthServer.inc is broken.
+#1092270 by jobeirne, steinmb and juampy: Decouple OAuth code from Drupal module via Libraries API.
 
 OAuth 6.x-3.0-beta4, 2011-04-06
 ------------------------------
