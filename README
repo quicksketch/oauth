@@ -1,5 +1,18 @@
-OAuth implements the OAuth classes for use with Drupal and acts as a support module for other modules that wish to use OAuth.
+Introduction
+============
+OAuth implements the OAuth classes for use with Drupal and acts as a support
+module for other modules that wish to use OAuth.
 
 OAuth Client flow:
+The callback to be used is /oauth/authorized/% where % is the id of the consumer
+used by the client. We need the id of the consumer to be able to find the token
+correctly.
 
-The callback to be used is /oauth/authorized/% where % is the id of the consumer used by the client. We need the id of the consumer to be able to find the token correctly.
+Installation
+============
+The OAuth library is out of the module. To set it up, just download twitter.lib.php from
+http://oauth.googlecode.com/svn/code/php into your libraries directory (normally sites/all/libraries)
+so its final location is sites/all/libraries/oauth/OAuth.php
+
+To verify that it has been installed correctly, view the Status Report at
+http://yoursite/admin/reports/status.
