@@ -5,11 +5,11 @@ package = "OAuth"
 dependencies[] = autoload
 recommends[] = ctools
 suggests[] = inputstream
+dependencies[] = libraries
 
 core = 6.x
 php = 5.2
 
-files[] = lib/OAuth.php
 files[] = includes/DrupalOAuthServer.inc
 files[] = includes/DrupalOAuthDataStore.inc
 files[] = includes/DrupalOAuthRequest.inc
