@@ -1,6 +1,9 @@
 <?php
-
-define('OAUTH_COMMON_CODE_BRANCH', '6.x-3.x');
+/**
+ * file
+ * OAuth module
+ */
+define('OAUTH_COMMON_CODE_BRANCH', '7.x-3.x');
 
 define('OAUTH_COMMON_TOKEN_TYPE_REQUEST', 0);
 define('OAUTH_COMMON_TOKEN_TYPE_ACCESS', 1);
@@ -10,7 +13,6 @@ define('OAUTH_COMMON_VERSION_1_RFC', 2); // The RFC 5849 1.0 spec
 
 //TODO: Don't act as a provider by default.
 //TODO: Check for other functions with breaking changes
-//TODO: Move admin pages to more regular places
 //TODO: Add watchdog messages about deprecated methods?
 //TODO: Move provider ui related pages to provider ui
 
@@ -198,7 +200,8 @@ function oauth_common_default_oauth_common_context() {
   $context->authorization_levels = array(
     '*' => array(
       'title' => 'Full access',
-      'description' => 'This will give @appname the same permissions that you normally have and will allow it to access the full range of services that @sitename provides.',
+      'description' => 'This will give @appname the same permissions that you normally have and will ' .
+                       'allow it to access the full range of services that @sitename provides.',
     ),
     'read' => array(
       'title' => 'Read access',
@@ -434,7 +437,7 @@ function oauth_common_get_user_provider_tokens($uid) {
  * Create a new context with defaults appropriately set from schema.
  *
  * @return stdClass
- *  An context initialized with the default values.
+ *  A context initialized with the default values.
  */
 function oauth_common_context_new() {
   if (!module_exists('ctools')) {
@@ -511,7 +514,7 @@ function oauth_common_context_load_all() {
 }
 
 /**
- * Saves an context in the database.
+ * Saves a context in the database.
  *
  * @return void
  */
@@ -521,7 +524,7 @@ function oauth_common_context_save($context) {
 }
 
 /**
- * Remove an context.
+ * Remove a context.
  *
  * @return void
  */
@@ -533,7 +536,7 @@ function oauth_common_context_delete($context) {
 }
 
 /**
- * Export an context.
+ * Export a context.
  *
  * @return string
  */

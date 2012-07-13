@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Page callbacks for OAuth module
+ */
 
 /**
  * Combined menu callback for tests of consumers and access tokens
@@ -53,7 +57,7 @@ function oauth_common_page_authorized($csid = NULL) {
 
       $access_token = $client->getAccessToken(NULL, array('verifier' => $verifier));
       if ($access_token) {
-        // We recieved a new token - save it
+        // We received a new token - save it
         if (!$access_token->in_database) {
           $access_token->write();
         }
@@ -73,7 +77,7 @@ function oauth_common_form_authorize() {
   $req = DrupalOAuthRequest::from_request();
   $context = oauth_common_context_from_request($req);
   $auth_ops = $context->authorization_options;
-         
+
   if (!$context) {
     drupal_set_message(t("Can't find OAuth context, check the site's settings."), 'error');
     return;
@@ -105,7 +109,7 @@ function oauth_common_form_authorize() {
       drupal_set_message(t('You are not authorized to allow external services access to this system.'), 'error');
       return drupal_access_denied();
     }
-       
+
     if (!empty($auth_ops['automatic_authorization'])
         && $auth_ops['automatic_authorization']
         && !empty($consumer->callback_url)) {
@@ -144,14 +148,17 @@ function oauth_common_form_authorize() {
     );
 
     $message = !empty($auth_ops['message']) ? $auth_ops['message'] :
-      'The application @appname wants to access @sitename on your behalf, check the permissions that you would like the application to have.';
+      'The application @appname wants to access @sitename on your behalf, check the permissions ' .
+      'that you would like the application to have.';
     $form['message'] = array(
       '#type' => 'item',
       '#markup' => t($message, $tvars),
     );
 
     $message = !empty($auth_ops['warning']) ? $auth_ops['warning'] :
-      'If you don\'t know what @appname is, or don\'t want to give it access to your content, just click here and we\'ll take you away from this page without granting @appname any access to @sitename.';
+      'If you don\'t know what @appname is, or don\'t want to give it access to your content, ' .
+      'just click here and we\'ll take you away from this page without granting @appname any access ' .
+      'to @sitename.';
     $form['warning'] = array(
       '#type' => 'item',
       '#markup' => l(t($message, $tvars), 'oauth/authorization/deny/' . $token->key),
@@ -171,7 +178,6 @@ function oauth_common_form_authorize() {
         '#type' => 'fieldset',
         '#title' => t($authorization_title, $tvars),
       );
-
       $form['authorization']['levels'] = array(
         '#tree' => TRUE,
       );
@@ -252,7 +258,8 @@ function oauth_common_form_authorize_validate($form, &$form_state) {
     }
 
     if (!$got_permission) {
-      form_set_error('confirm', t("You haven't given the application access to anything. Click on 'Deny access' or just close this window if you don't want to authorize it."));
+      form_set_error('confirm', t("You haven't given the application access to anything. " .
+        "Click on 'Deny access' or just close this window if you don't want to authorize it."));
     }
   }
 }
@@ -362,7 +369,8 @@ function oauth_common_callback_access_token() {
     $access_token = $server->fetch_access_token($req);
 
     // Set the expiry time based on context settings or get parameter
-    $expires = !empty($context->authorization_options['access_token_lifetime']) ? REQUEST_TIME + $context->authorization_options['access_token_lifetime'] : 0;
+    $expires = !empty($context->authorization_options['access_token_lifetime']) ?
+      REQUEST_TIME + $context->authorization_options['access_token_lifetime'] : 0;
     if ($_GET['expires'] && intval($_GET['expires'])) {
       $hint = intval($_GET['expires']);
       // Only accept more restrictive expiry times

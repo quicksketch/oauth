@@ -1,7 +1,10 @@
 <?php
+/**
+ * @file
+ */
 
 /**
- * Menu system callback for listing a users consumers.
+ * Menu system callback for listing a user's consumers.
  *
  * @param object $account
  */

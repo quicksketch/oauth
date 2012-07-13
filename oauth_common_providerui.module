@@ -1,4 +1,7 @@
 <?php
+/**
+ * OAuth Common Provider UI module
+ */
 
 /**
  * Implements hook_menu().

@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Administration pages for OAuth module.
+ */
 
 function _oauth_common_admin() {
   $form = array();
@@ -139,7 +143,7 @@ function oauth_common_add_context() {
 }
 
 /**
- * Edit an context.
+ * Edit a context.
  *
  * Called from both the add and edit points to provide for common flow.
  */
@@ -154,7 +158,7 @@ function oauth_common_edit_context($context) {
 }
 
 /**
- * Form to edit the settings of an context.
+ * Form to edit the settings of a context.
  */
 function oauth_common_edit_form_context($form, &$form_state, $context) {
   $form['#attached']['css'] = array(
@@ -186,7 +190,9 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     '#maxlength'     => 32,
     '#default_value' => $context->name,
     '#title'         => t('Context name'),
-    '#description'   => t('A unique name used to identify this preset internally. It must be only be alpha characters and underscores. No spaces, numbers or uppercase characters.'),
+    '#description'   => t('A unique name used to identify this preset internally. It ' .
+                          'must be only alpha characters and underscores. No spaces, ' .
+                          'numbers or uppercase characters.'),
     '#machine_name' => array(
       'source' => array('title'),
       'exists' => 'oauth_common_edit_form_context_exists',
@@ -327,7 +333,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
 }
 
 /**
- * Helper function for constructing a auth level fieldset.
+ * Helper function for constructing an auth level fieldset.
  *
  * @param object $context
  * @param int $idx
@@ -434,7 +440,8 @@ function oauth_common_edit_form_context_validate(&$form, &$form_state) {
         form_error($form['authorization_levels'][$key]['name'], t('Authorization level name must be unique.'));
       }
       else if (preg_match("/[^A-Za-z0-9_\*]/", $level['name'])) {
-        form_error($form['authorization_levels'][$key]['name'], t('Authorization level name must be alphanumeric or underscores only.'));
+        form_error($form['authorization_levels'][$key]['name'],
+          t('Authorization level name must be alphanumeric or underscores only.'));
       }
       if (empty($level['title'])) {
         form_error($form['authorization_levels'][$key]['title'], t('Authorization levels must have a title.'));
@@ -452,7 +459,8 @@ function oauth_common_edit_form_context_validate(&$form, &$form_state) {
   // Check that at least one default authorization level is checked when
   // authorization level selection is disabled.
   if (!$default_exists && $values['authorization_options']['disable_auth_level_selection']) {
-    form_error($form['authorization_options']['disable_auth_level_selection'], t('You must select at least one default authorirization level if level selection is disabled.'));
+    form_error($form['authorization_options']['disable_auth_level_selection'],
+      t('You must select at least one default authorirization level if level selection is disabled.'));
   }
 }
 
