@@ -226,7 +226,10 @@ function oauth_common_form_authorize() {
   else {
     $query = $_GET;
     unset($query['q']); // why are there so few q's?
-    drupal_goto('user/login', array('query' => array(
+    // Allow this path to be set to something other than the standard
+    // login page in case the site has a mobile-enhanced login page.
+    $path = variable_get('oauth_common_login_path', OAUTH_COMMON_LOGIN_PATH);
+    drupal_goto($path, array('query' => array(
       'destination' => url('oauth/authorize', array(
         'query' => $query,
       )),
