@@ -20,6 +20,13 @@ function _oauth_common_admin() {
     '#default_value' => variable_get('oauth_common_request_token_lifetime', 7200),
   );
 
+  $form['oauth_common_login_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Login page'),
+    '#description' => t('Specify an alternative login page. This is useful when, for example, you want to show a mobile-enhanced login page.'),
+    '#default_value' => variable_get('oauth_common_login_path', OAUTH_COMMON_LOGIN_PATH),
+  );
+
   $form['#validate'][] = '_oauth_common_admin_settings_validate';
 
   return system_settings_form($form);
