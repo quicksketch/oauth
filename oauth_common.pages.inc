@@ -122,7 +122,9 @@ function oauth_common_form_authorize() {
       // Pick the callback url apart and add the token parameter
       $callback = parse_url($consumer->callback_url);
       $query = array();
-      parse_str($callback['query'], $query);
+      if (!empty($callback['query'])) {
+        parse_str($callback['query'], $query);
+      }
       $query['oauth_token'] = $token->key;
       $callback['query'] = http_build_query($query, 'idx_', '&');
 
@@ -374,7 +376,7 @@ function oauth_common_callback_access_token() {
     // Set the expiry time based on context settings or get parameter
     $expires = !empty($context->authorization_options['access_token_lifetime']) ?
       REQUEST_TIME + $context->authorization_options['access_token_lifetime'] : 0;
-    if ($_GET['expires'] && intval($_GET['expires'])) {
+    if (!empty($_GET['expires']) && intval($_GET['expires'])) {
       $hint = intval($_GET['expires']);
       // Only accept more restrictive expiry times
       if ($expires == 0 || $hint < $expires) {
