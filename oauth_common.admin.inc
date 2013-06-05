@@ -4,54 +4,54 @@
  * Administration pages for OAuth module.
  */
 
-function _oauth_common_admin() {
+function _oauth_admin() {
   $form = array();
 
-  $form['oauth_common_enable_provider'] = array(
+  $form['oauth_enable_provider'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable the oauth provider'),
-    '#default_value' => variable_get('oauth_common_enable_provider', TRUE),
+    '#default_value' => variable_get('oauth_enable_provider', TRUE),
     '#description' => t('This option controls whether this site should act as a OAuth provider or not'),
   );
 
-  $form['oauth_common_request_token_lifetime'] = array(
+  $form['oauth_request_token_lifetime'] = array(
     '#type' => 'textfield',
     '#title' => t('Request token lifetime (in seconds)'),
-    '#default_value' => variable_get('oauth_common_request_token_lifetime', 7200),
+    '#default_value' => variable_get('oauth_request_token_lifetime', 7200),
   );
 
-  $form['oauth_common_login_path'] = array(
+  $form['oauth_login_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Login page'),
     '#description' => t('Specify an alternative login page. This is useful when, for example, you want to show a mobile-enhanced login page.'),
-    '#default_value' => variable_get('oauth_common_login_path', OAUTH_COMMON_LOGIN_PATH),
+    '#default_value' => variable_get('oauth_login_path', OAUTH_COMMON_LOGIN_PATH),
   );
 
-  $form['#validate'][] = '_oauth_common_admin_settings_validate';
+  $form['#validate'][] = '_oauth_admin_settings_validate';
 
   return system_settings_form($form);
 }
 
-function _oauth_common_admin_settings_validate($form, $form_state) {
+function _oauth_admin_settings_validate($form, $form_state) {
   $values = $form_state['values'];
 
-  $lifetime = intval($values['oauth_common_request_token_lifetime'], 10);
+  $lifetime = intval($values['oauth_request_token_lifetime'], 10);
   if (!$lifetime) {
-    form_set_error('oauth_common_request_token_lifetime', t('The request token lifetime must be a non-zero integer value.'));
+    form_set_error('oauth_request_token_lifetime', t('The request token lifetime must be a non-zero integer value.'));
   }
 }
 
 /**
  * Output a list of contexts.
  */
-function oauth_common_list_context($js = NULL) {
+function oauth_list_context($js = NULL) {
   $header = array(
     array('data' => t('Title'),      'class' => array('oauth-common-contexts-title')),
     array('data' => t('Storage'),    'class' => array('oauth-common-contexts-storage')),
     array('data' => t('Operations'), 'class' => array('oauth-common-contexts-operations')),
   );
 
-  $contexts = oauth_common_context_load_all();
+  $contexts = oauth_context_load_all();
   $rows = array();
 
   if (!$contexts) {
@@ -134,8 +134,8 @@ function oauth_common_list_context($js = NULL) {
 /**
  * Handle the add context page.
  */
-function oauth_common_add_context() {
-  $context = oauth_common_context_new();
+function oauth_add_context() {
+  $context = oauth_context_new();
   drupal_set_title(t('Add context'));
   if (!$context) {
     drupal_set_message(t("Can't create contexts, check that you've installed !ctools.", array(
@@ -144,7 +144,7 @@ function oauth_common_add_context() {
     $result = '';
   }
   else {
-    $result = oauth_common_edit_context($context);
+    $result = oauth_edit_context($context);
   }
   return $result;
 }
@@ -154,22 +154,22 @@ function oauth_common_add_context() {
  *
  * Called from both the add and edit points to provide for common flow.
  */
-function oauth_common_edit_context($context) {
+function oauth_edit_context($context) {
   if (!is_object($context)) {
-    $context = oauth_common_context_load($context);
+    $context = oauth_context_load($context);
   }
   if ($context && !empty($context->title)) {
     drupal_set_title($context->title);
   }
-  return drupal_get_form('oauth_common_edit_form_context', $context);
+  return drupal_get_form('oauth_edit_form_context', $context);
 }
 
 /**
  * Form to edit the settings of a context.
  */
-function oauth_common_edit_form_context($form, &$form_state, $context) {
+function oauth_edit_form_context($form, &$form_state, $context) {
   $form['#attached']['css'] = array(
-    drupal_get_path('module', 'oauth_common') . '/css/admin.css'
+    drupal_get_path('module', 'oauth') . '/css/admin.css'
   );
 
   $form['cid'] = array(
@@ -202,7 +202,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
                           'numbers or uppercase characters.'),
     '#machine_name' => array(
       'source' => array('title'),
-      'exists' => 'oauth_common_edit_form_context_exists',
+      'exists' => 'oauth_edit_form_context_exists',
     ),
     '#required'      => TRUE,
   );
@@ -305,10 +305,10 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
       '#type' => 'submit',
       '#value' => t('Add authorization level'),
       '#weight' => 10,
-      '#submit' => array('oauth_common_edit_form_auth_level_ajax_add'),
+      '#submit' => array('oauth_edit_form_auth_level_ajax_add'),
       '#limit_validation_errors' => array(),
       '#ajax' => array(
-        'callback' => 'oauth_common_edit_form_auth_level_ajax_callback',
+        'callback' => 'oauth_edit_form_auth_level_ajax_callback',
         'wrapper' => 'auth-level-wrapper',
       )
     ),
@@ -319,7 +319,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     if ($title == '*') {
       $title = t('Full access');
     }
-    $l = oauth_common_edit_form_auth_level($context, $title, $name, $level);
+    $l = oauth_edit_form_auth_level($context, $title, $name, $level);
     $form['authorization_levels'][] = $l;
   }
 
@@ -327,7 +327,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
     $form_state['authorization_level_new'] = 0;
   }
   for ($i = 0; $i < $form_state['authorization_level_new']; $i++) {
-    $form['authorization_levels'][] = oauth_common_edit_form_auth_level($context, t('Authorization level'));
+    $form['authorization_levels'][] = oauth_edit_form_auth_level($context, t('Authorization level'));
   }
 
   $form['actions'] = array('#type' => 'actions');
@@ -349,7 +349,7 @@ function oauth_common_edit_form_context($form, &$form_state, $context) {
  * @param array $level
  * @return array.
  */
-function oauth_common_edit_form_auth_level($context, $title, $name = '', $level = array()) {
+function oauth_edit_form_auth_level($context, $title, $name = '', $level = array()) {
   $level = $level + array(
     'title' => '',
     'description' => '',
@@ -399,7 +399,7 @@ function oauth_common_edit_form_auth_level($context, $title, $name = '', $level 
  *
  * @return void
  */
-function oauth_common_edit_form_auth_level_ajax_add($form, &$form_state) {
+function oauth_edit_form_auth_level_ajax_add($form, &$form_state) {
   $form_state['authorization_level_new']++;
   $form_state['rebuild'] = TRUE;
 }
@@ -409,7 +409,7 @@ function oauth_common_edit_form_auth_level_ajax_add($form, &$form_state) {
  *
  * @return void
  */
-function oauth_common_edit_form_auth_level_ajax_callback($form, $form_state) {
+function oauth_edit_form_auth_level_ajax_callback($form, $form_state) {
   return $form['authorization_levels'];
 }
 
@@ -419,11 +419,11 @@ function oauth_common_edit_form_auth_level_ajax_callback($form, $form_state) {
  * @param $name the name parameter for the context.
  * @return boolean
  */
-function oauth_common_edit_form_context_exists($name) {
+function oauth_edit_form_context_exists($name) {
   $exists = FALSE;
 
   if (!empty($name)) {
-    $result = db_query('SELECT cid FROM {oauth_common_context} WHERE name = :name', array(
+    $result = db_query('SELECT cid FROM {oauth_context} WHERE name = :name', array(
       ':name' => $name
     ))->fetchField();
     $exists = $result ? TRUE : FALSE;
@@ -435,7 +435,7 @@ function oauth_common_edit_form_context_exists($name) {
 /**
  * Validate submission of the preset edit form.
  */
-function oauth_common_edit_form_context_validate(&$form, &$form_state) {
+function oauth_edit_form_context_validate(&$form, &$form_state) {
   $values = $form_state['values'];
 
   // Check that the authorization level names are unique within the context
@@ -474,7 +474,7 @@ function oauth_common_edit_form_context_validate(&$form, &$form_state) {
 /**
  * Process submission of the mini panel edit form.
  */
-function oauth_common_edit_form_context_submit($form, &$form_state) {
+function oauth_edit_form_context_submit($form, &$form_state) {
   $context = $form_state['values']['context_object'];
   $values = $form_state['values'];
 
@@ -514,7 +514,7 @@ function oauth_common_edit_form_context_submit($form, &$form_state) {
   $context->authorization_levels = $levels;
   $context->authorization_options['default_authorization_levels'] = $default_levels;
 
-  oauth_common_context_save($context);
+  oauth_context_save($context);
 
   if (empty($context->cid)) {
     drupal_set_message(t('Your new context %title has been saved.', array('%title' => $context->title)));
@@ -530,9 +530,9 @@ function oauth_common_edit_form_context_submit($form, &$form_state) {
 /**
  * Provide a form to confirm deletion of a context.
  */
-function oauth_common_delete_confirm_context($form, &$form_state, $context) {
+function oauth_delete_confirm_context($form, &$form_state, $context) {
   if (!is_object($context)) {
-    $context = oauth_common_context_load($context);
+    $context = oauth_context_load($context);
   }
   if ($context->export_type == (EXPORT_IN_CODE | EXPORT_IN_DATABASE)) {
     $title  = t('Are you sure you want to revert the context "@title"?', array('@title' => $context->title));
@@ -559,10 +559,10 @@ function oauth_common_delete_confirm_context($form, &$form_state, $context) {
 /**
  * Handle the submit button to delete a context.
  */
-function oauth_common_delete_confirm_context_submit($form, &$form_state) {
-  $context = oauth_common_context_load($form_state['values']['context']);
+function oauth_delete_confirm_context_submit($form, &$form_state) {
+  $context = oauth_context_load($form_state['values']['context']);
   if ($context->cid == $form_state['values']['cid']) {
-    oauth_common_context_delete($context);
+    oauth_context_delete($context);
     $form_state['redirect'] = 'admin/config/services/oauth';
   }
 }
@@ -570,12 +570,12 @@ function oauth_common_delete_confirm_context_submit($form, &$form_state) {
 /**
  * Page callback to export a context to PHP code.
  */
-function oauth_common_export_context($form, &$form_state, $context) {
+function oauth_export_context($form, &$form_state, $context) {
   if (!is_object($context)) {
-    $context = oauth_common_context_load($context);
+    $context = oauth_context_load($context);
   }
   drupal_set_title($context->title);
-  $code = oauth_common_context_export($context);
+  $code = oauth_context_export($context);
 
   $lines = substr_count($code, "\n") + 4;
   $form['code'] = array(

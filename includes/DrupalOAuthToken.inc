@@ -68,7 +68,7 @@ class DrupalOAuthToken extends OAuthToken {
         $values['created'] = $this->created;
       }
 
-      $ready = drupal_write_record('oauth_common_provider_token', $values, $primary);
+      $ready = drupal_write_record('oauth_provider_token', $values, $primary);
 
       if (!$ready) {
         throw new OAuthException("Couldn't save token");
@@ -89,7 +89,7 @@ class DrupalOAuthToken extends OAuthToken {
       $values['tid'] = $this->tid;
     }
 
-    drupal_write_record('oauth_common_token', $values, $primary);
+    drupal_write_record('oauth_token', $values, $primary);
 
     $this->tid = $values['tid'];
     $this->in_database = TRUE;
@@ -99,7 +99,7 @@ class DrupalOAuthToken extends OAuthToken {
         'tid'       => $this->tid,
         'token_key' => $this->key,
       );
-      drupal_write_record('oauth_common_provider_token', $values, array('token_key'));
+      drupal_write_record('oauth_provider_token', $values, array('token_key'));
     }
   }
 
@@ -125,11 +125,11 @@ class DrupalOAuthToken extends OAuthToken {
     //TODO: Ensure backwards compatibility
     $condition = db_and()->condition('key_hash', sha1($key))->condition('csid', $consumer->csid);
 
-    db_delete('oauth_common_provider_token')
-      ->condition('tid', db_select('oauth_common_token', 't')->condition($condition)->fields('t', array('tid')), 'IN')
+    db_delete('oauth_provider_token')
+      ->condition('tid', db_select('oauth_token', 't')->condition($condition)->fields('t', array('tid')), 'IN')
       ->execute();
 
-    db_delete('oauth_common_token')
+    db_delete('oauth_token')
       ->condition($condition)
       ->execute();
   }
@@ -161,7 +161,7 @@ class DrupalOAuthToken extends OAuthToken {
    *  The loaded token object or FALSE if load failed
    */
   public static function loadByKey($key, $consumer = FALSE, $type = OAUTH_COMMON_TOKEN_TYPE_ACCESS) {
-    $query = db_select('oauth_common_token', 't');
+    $query = db_select('oauth_token', 't');
 
     $query
       ->condition('t.key_hash', sha1($key))
@@ -173,13 +173,13 @@ class DrupalOAuthToken extends OAuthToken {
     }
 
     if (!$consumer || is_object($consumer) && $consumer->provider_consumer) {
-      $query->join('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+      $query->join('oauth_provider_token', 'pt', 'pt.tid = t.tid');
       $query->fields('pt', array('created', 'changed', 'services', 'authorized'));
     }
 
     // Only fetch non-provider tokens - needed for backwards compatibility with deprecated DrupalOAuthToken::load() from 6.x-3.0-beta3
     if ($consumer === TRUE) {
-      $query->leftJoin('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+      $query->leftJoin('oauth_provider_token', 'pt', 'pt.tid = t.tid');
       $query->isNull('pt.tid');
     }
     else if ($consumer) {
@@ -200,14 +200,14 @@ class DrupalOAuthToken extends OAuthToken {
    *  The loaded token object or FALSE if load failed
    */
   public static function loadById($tid, $load_provider_data = TRUE) {
-    $query = db_select('oauth_common_token', 't');
+    $query = db_select('oauth_token', 't');
 
     $query
       ->condition('t.tid', $tid)
       ->fields('t');
 
     if ($load_provider_data) {
-      $query->join('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+      $query->join('oauth_provider_token', 'pt', 'pt.tid = t.tid');
       $query->fields('pt', array('created', 'changed', 'services', 'authorized'));
     }
 

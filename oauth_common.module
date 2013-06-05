@@ -17,7 +17,7 @@ define('OAUTH_COMMON_LOGIN_PATH', 'user/login');
 /**
  * Implements hook_permission().
  */
-function oauth_common_permission() {
+function oauth_permission() {
   $permissions = array(
     'access own authorizations' => array(
       'title' => t('Access own OAuth authorizations'),
@@ -47,7 +47,7 @@ function oauth_common_permission() {
 
   // Add seperate permissions for creating and
   // authorizing consumers in each context.
-  foreach (oauth_common_context_list() as $name => $title) {
+  foreach (oauth_context_list() as $name => $title) {
     $permissions[sprintf('oauth register consumers in %s', $name)] = array(
       'title' => t('Register OAuth consumers in %context', array('%context' => $title)),
     );
@@ -62,19 +62,19 @@ function oauth_common_permission() {
 /**
  * Implements hook_menu().
  */
-function oauth_common_menu() {
+function oauth_menu() {
   $menu = array();
 
   $admin_base = array(
     'access arguments' => array('administer oauth'),
-    'file' => 'oauth_common.admin.inc',
+    'file' => 'oauth.admin.inc',
   );
 
   $menu['admin/config/services/oauth'] = array(
     'title' => 'OAuth',
     'description' => 'Settings for OAuth',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('_oauth_common_admin'),
+    'page arguments' => array('_oauth_admin'),
     'type' => MENU_NORMAL_ITEM,
   ) + $admin_base;
 
@@ -82,7 +82,7 @@ function oauth_common_menu() {
     'title' => 'Settings',
     'description' => 'Settings for OAuth',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('_oauth_common_admin'),
+    'page arguments' => array('_oauth_admin'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 0,
   ) + $admin_base;
@@ -93,51 +93,51 @@ function oauth_common_menu() {
 
   $provider_base = array(
     'access callback' => 'oauth_commmon_is_provider',
-    'file' => 'oauth_common.pages.inc',
+    'file' => 'oauth.pages.inc',
     'type' => MENU_CALLBACK,
   );
 
   // The endpoint that consumers use to get a request token.
   $menu['oauth/request_token'] = array(
-    'page callback' => 'oauth_common_callback_request_token',
+    'page callback' => 'oauth_callback_request_token',
   ) + $provider_base;
 
   // The page a user gets sent to to authorize a request token.
   $menu['oauth/authorize'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('oauth_common_form_authorize'),
+    'page arguments' => array('oauth_form_authorize'),
   ) + $provider_base;
 
   // The endpoint that consumers use to get a access token.
   $menu['oauth/access_token'] = array(
-    'page callback' => 'oauth_common_callback_access_token',
+    'page callback' => 'oauth_callback_access_token',
   ) + $provider_base;
 
   // This page is used both in consumer and provider mode. For consumers it is
-  // the callback url and triggers hook_oauth_common_authorized(). For
+  // the callback url and triggers hook_oauth_authorized(). For
   // providers it is the page where users end up if no callback url exists.
   $menu['oauth/authorized'] = array(
     'title' => 'Authorization finished',
-    'page callback' => 'oauth_common_page_authorized',
+    'page callback' => 'oauth_page_authorized',
     'access arguments' => array('access content'),
-    'file' => 'oauth_common.pages.inc',
+    'file' => 'oauth.pages.inc',
     'type' => MENU_CALLBACK,
   );
 
-  // TODO: Different structures makes sense depending on whether oauth_common is
+  // TODO: Different structures makes sense depending on whether oauth is
   // acting as a provider or as a consumer.
 
   $menu['oauth/test/valid-consumer'] = array(
-    'file' => 'oauth_common.pages.inc',
-    'page callback' => '_oauth_common_validate_request_callback',
+    'file' => 'oauth.pages.inc',
+    'page callback' => '_oauth_validate_request_callback',
     'page arguments' => array('consumer'),
     'access callback' => 'oauth_commmon_is_provider',
     'type' => MENU_CALLBACK,
   );
 
   $menu['oauth/test/valid-access-token'] = array(
-    'file' => 'oauth_common.pages.inc',
-    'page callback' => '_oauth_common_validate_request_callback',
+    'file' => 'oauth.pages.inc',
+    'page callback' => '_oauth_validate_request_callback',
     'page arguments' => array('access token'),
     'access callback' => 'oauth_commmon_is_provider',
     'type' => MENU_CALLBACK,
@@ -151,7 +151,7 @@ function oauth_common_menu() {
  *
  * @param string $key
  */
-function oauth_common_consumer_load($csid) {
+function oauth_consumer_load($csid) {
   $consumer = DrupalOAuthConsumer::loadById($csid, TRUE);
   if (!$consumer) {
     $consumer = FALSE;
@@ -164,7 +164,7 @@ function oauth_common_consumer_load($csid) {
  *
  * @param string $key
  */
-function oauth_common_provider_token_load($tid) {
+function oauth_provider_token_load($tid) {
   $token = DrupalOAuthToken::loadByID($tid);
   if (!$token) {
     $token = FALSE;
@@ -175,19 +175,19 @@ function oauth_common_provider_token_load($tid) {
 /**
  * Implements hook_cron().
  */
-function oauth_common_cron() {
+function oauth_cron() {
   $token_condition = db_and()->condition('expires', 0, '<>')->condition('expires', REQUEST_TIME, '<=');
 
-  db_delete('oauth_common_provider_token')
-    ->condition('tid', db_select('oauth_common_token', 't')->condition($token_condition)->fields('t', array('tid')), 'IN')
+  db_delete('oauth_provider_token')
+    ->condition('tid', db_select('oauth_token', 't')->condition($token_condition)->fields('t', array('tid')), 'IN')
     ->execute();
 
-  db_delete('oauth_common_token')
+  db_delete('oauth_token')
     ->condition($token_condition)
     ->execute();
 
   // Should 300 be overriden in DrupalOAuthServer and made configurable?
-  db_delete('oauth_common_nonce')
+  db_delete('oauth_nonce')
     ->condition('timestamp', REQUEST_TIME - 300, '<')
     ->execute();
 }
@@ -195,7 +195,7 @@ function oauth_common_cron() {
 /**
  * Implements hook_oauth_default_contexts().
  */
-function oauth_common_default_oauth_common_context() {
+function oauth_default_oauth_context() {
   $contexts = array();
 
   $context = new stdClass;
@@ -234,26 +234,26 @@ function oauth_common_default_oauth_common_context() {
 /**
  * Implements hook_user_delete().
  */
-function oauth_common_user_delete($account) {
+function oauth_user_delete($account) {
   // Delete all tokens and consumers related to a user
-  module_load_include('inc', 'oauth_common');
+  module_load_include('inc', 'oauth');
 
-  $consumer_condition = db_select('oauth_common_provider_consumer', 'c')->condition('uid', $account->uid)->fields('c', array('csid'));
+  $consumer_condition = db_select('oauth_provider_consumer', 'c')->condition('uid', $account->uid)->fields('c', array('csid'));
   $token_condition = db_or()->condition('uid', $account->uid)->condition('csid', $consumer_condition, 'IN');
 
-  db_delete('oauth_common_provider_token')
-    ->condition('tid', db_select('oauth_common_token', 't')->condition($token_condition)->fields('t', array('tid')), 'IN')
+  db_delete('oauth_provider_token')
+    ->condition('tid', db_select('oauth_token', 't')->condition($token_condition)->fields('t', array('tid')), 'IN')
     ->execute();
 
-  db_delete('oauth_common_token')
+  db_delete('oauth_token')
     ->condition($token_condition)
     ->execute();
 
-  db_delete('oauth_common_consumer')
+  db_delete('oauth_consumer')
     ->condition('csid', $consumer_condition, 'IN')
     ->execute();
 
-  db_delete('oauth_common_provider_consumer')
+  db_delete('oauth_provider_consumer')
     ->condition('uid', $account->uid)
     ->execute();
 }
@@ -315,7 +315,7 @@ function services_oauth_xrds() {
  * @param string $permission
  *  The permission that is needed in addition to edit access on the $user.
  */
-function _oauth_common_user_access($user, $permission = NULL) {
+function _oauth_user_access($user, $permission = NULL) {
   return user_edit_access($user) && (empty($permission) || user_access($permission));
 }
 
@@ -327,7 +327,7 @@ function _oauth_common_user_access($user, $permission = NULL) {
  * @param DrupalOAuthConsumer $consumer
  * @return bool
  */
-function oauth_common_can_edit_consumer($consumer) {
+function oauth_can_edit_consumer($consumer) {
   $may_edit = user_access('administer consumers');
 
   // If the user doesn't have consumer admin privileges, check for account
@@ -348,7 +348,7 @@ function oauth_common_can_edit_consumer($consumer) {
  *  logged in user.
  * @return bool
  */
-function oauth_common_can_create_consumers($account = NULL) {
+function oauth_can_create_consumers($account = NULL) {
   global $user;
   if (!$account) {
     $account = $user;
@@ -356,7 +356,7 @@ function oauth_common_can_create_consumers($account = NULL) {
 
   $can_register_consumers = user_access('oauth register any consumers', $account);
   if (!$can_register_consumers) {
-    foreach (oauth_common_context_list() as $context => $title) {
+    foreach (oauth_context_list() as $context => $title) {
       $can_register_consumers = $can_register_consumers || user_access(sprintf('oauth register consumers in %s', $context), $account);
     }
   }
@@ -371,7 +371,7 @@ function oauth_common_can_create_consumers($account = NULL) {
  * @return bool
  *  Always returns TRUE
  */
-function _oauth_common_always_true() {
+function _oauth_always_true() {
   return TRUE;
 }
 
@@ -382,15 +382,15 @@ function _oauth_common_always_true() {
  * @param DrupalOAuthConsumer $consumer
  * @return bool
  */
-function oauth_common_can_authorize_consumer($consumer) {
+function oauth_can_authorize_consumer($consumer) {
   return user_access(sprintf('oauth authorize consumers in %s', $consumer->context));
 }
 
 /**
- * Check if oauth_common is acting as a provider.
+ * Check if oauth is acting as a provider.
  */
 function oauth_commmon_is_provider() {
-  return variable_get('oauth_common_enable_provider', TRUE);
+  return variable_get('oauth_enable_provider', TRUE);
 }
 
 /**
@@ -407,7 +407,7 @@ function oauth_commmon_is_provider() {
  *  The url that the client should be redirected to to authorize
  *  the request token.
  */
-function oauth_common_get_request_token($consumer_token, $request_endpoint = '/oauth/request_token', $authorize_endpoint = '/oauth/authorize') {
+function oauth_get_request_token($consumer_token, $request_endpoint = '/oauth/request_token', $authorize_endpoint = '/oauth/authorize') {
   $client = new DrupalOAuthClient($consumer_token);
   $request_token = $client->getRequestToken($request_endpoint);
   $request_token->write();
@@ -421,12 +421,12 @@ function oauth_common_get_request_token($consumer_token, $request_endpoint = '/o
  * @param string $type
  * @return array
  */
-function oauth_common_get_user_provider_tokens($uid) {
-  $q = db_select('oauth_common_token', 't')
+function oauth_get_user_provider_tokens($uid) {
+  $q = db_select('oauth_token', 't')
     ->condition('t.uid', $uid, '=')
     ->condition('t.type', OAUTH_COMMON_TOKEN_TYPE_ACCESS, '=');
 
-  $q->join('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
+  $q->join('oauth_provider_token', 'pt', 'pt.tid = t.tid');
 
   $res = $q->fields('t')
     ->fields('pt', array('created', 'changed', 'services', 'authorized'))
@@ -445,12 +445,12 @@ function oauth_common_get_user_provider_tokens($uid) {
  * @return stdClass
  *  A context initialized with the default values.
  */
-function oauth_common_context_new() {
+function oauth_context_new() {
   if (!module_exists('ctools')) {
     return FALSE;
   }
   ctools_include('export');
-  return ctools_export_new_object('oauth_common_context');
+  return ctools_export_new_object('oauth_context');
 }
 
 /**
@@ -461,12 +461,12 @@ function oauth_common_context_new() {
  * @return stdClass
  *  The context configuration.
  */
-function oauth_common_context_load($name) {
+function oauth_context_load($name) {
   if (!module_exists('ctools')) {
     return FALSE;
   }
   ctools_include('export');
-  $result = ctools_export_load_object('oauth_common_context', 'names', array($name));
+  $result = ctools_export_load_object('oauth_context', 'names', array($name));
   if (isset($result[$name])) {
     return $result[$name];
   }
@@ -482,7 +482,7 @@ function oauth_common_context_load($name) {
  * @return object
  *  The context configuration.
  */
-function oauth_common_context_from_request($request) {
+function oauth_context_from_request($request) {
   $context = NULL;
   $consumer_key = $request->get_parameter('oauth_consumer_key');
   $token_key = $request->get_parameter('oauth_token');
@@ -499,7 +499,7 @@ function oauth_common_context_from_request($request) {
   }
 
   if (!empty($consumer)) {
-    $context = oauth_common_context_load($consumer->context);
+    $context = oauth_context_load($consumer->context);
   }
 
   return $context;
@@ -511,12 +511,12 @@ function oauth_common_context_from_request($request) {
  * @return array
  *  Array of context objects keyed by context names.
  */
-function oauth_common_context_load_all() {
+function oauth_context_load_all() {
   if (!module_exists('ctools')) {
     return FALSE;
   }
   ctools_include('export');
-  return ctools_export_load_object('oauth_common_context');
+  return ctools_export_load_object('oauth_context');
 }
 
 /**
@@ -524,9 +524,9 @@ function oauth_common_context_load_all() {
  *
  * @return void
  */
-function oauth_common_context_save($context) {
+function oauth_context_save($context) {
   $update = (isset($context->cid)) ? array('cid') : array();
-  drupal_write_record('oauth_common_context', $context, $update);
+  drupal_write_record('oauth_context', $context, $update);
 }
 
 /**
@@ -534,8 +534,8 @@ function oauth_common_context_save($context) {
  *
  * @return void
  */
-function oauth_common_context_delete($context) {
-  db_delete('oauth_common_context')
+function oauth_context_delete($context) {
+  db_delete('oauth_context')
     ->condition('name', $context->name)
     ->condition('cid', $context->cid)
     ->execute();
@@ -546,12 +546,12 @@ function oauth_common_context_delete($context) {
  *
  * @return string
  */
-function oauth_common_context_export($context, $indent = '') {
+function oauth_context_export($context, $indent = '') {
   if (!module_exists('ctools')) {
     return FALSE;
   }
   ctools_include('export');
-  $output = ctools_export_object('oauth_common_context', $context, $indent);
+  $output = ctools_export_object('oauth_context', $context, $indent);
   return $output;
 }
 
@@ -560,9 +560,9 @@ function oauth_common_context_export($context, $indent = '') {
  *
  * @return array
  */
-function oauth_common_context_list() {
+function oauth_context_list() {
   $return = array();
-  $contexts = oauth_common_context_load_all();
+  $contexts = oauth_context_load_all();
   if ($contexts) {
     foreach ($contexts as $context) {
       $return[$context->name] = $context->title;
@@ -576,10 +576,10 @@ function oauth_common_context_list() {
  *
  * @return string
  */
-function _oauth_common_version() {
+function _oauth_version() {
   static $version;
   if (!isset($version)) {
-    $info = db_query("SELECT info FROM {system} WHERE name = 'oauth_common'")->fetchField();
+    $info = db_query("SELECT info FROM {system} WHERE name = 'oauth'")->fetchField();
     $info = $info ? unserialize($info) : FALSE;
     if (!$info || empty($info['version'])) {
       $version = OAUTH_COMMON_CODE_BRANCH;

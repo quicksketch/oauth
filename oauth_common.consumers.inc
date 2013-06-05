@@ -8,10 +8,10 @@
  *
  * @param object $account
  */
-function oauth_common_page_user_consumers($account) {
-  module_load_include('inc', 'oauth_common');
+function oauth_page_user_consumers($account) {
+  module_load_include('inc', 'oauth');
 
-  $ci = oauth_common_user_consumers($account->uid);
+  $ci = oauth_user_consumers($account->uid);
   $header = array(
     array('data' => t('Name'),       'class' =>  array('oauth-common-consumer-name')),
     array('data' => t('Key'),        'class' =>  array('oauth-common-consumer-key')),
@@ -37,7 +37,7 @@ function oauth_common_page_user_consumers($account) {
     );
     $operations = array();
 
-    if (oauth_common_can_edit_consumer($consumer)) {
+    if (oauth_can_edit_consumer($consumer)) {
       $operations[] = array(
         'title' => t('Edit'),
         'href'  => sprintf('user/%d/oauth/consumer/%s', $account->uid, $consumer->csid),
@@ -71,26 +71,26 @@ function oauth_common_page_user_consumers($account) {
 /**
  * Menu system callback for the add consumer page.
  */
-function oauth_common_add_consumer($account) {
+function oauth_add_consumer($account) {
   $consumer = new DrupalOAuthConsumer(user_password(32), user_password(32), array(
     'callback_url' => '',
     'uid' => $account->uid,
     'provider_consumer' => TRUE,
   ));
-  return drupal_get_form('oauth_common_form_consumer', $consumer);
+  return drupal_get_form('oauth_form_consumer', $consumer);
 }
 
 /**
  * Menu system callback for the edit consumer page.
  */
-function oauth_common_edit_consumer($consumer) {
-  return drupal_get_form('oauth_common_form_consumer', $consumer);
+function oauth_edit_consumer($consumer) {
+  return drupal_get_form('oauth_form_consumer', $consumer);
 }
 
 /**
  * The consumer form that is shared by the add and edit page.
  */
-function oauth_common_form_consumer($form, &$form_state, $consumer) {
+function oauth_form_consumer($form, &$form_state, $consumer) {
   $form = array();
 
   $form['consumer_object'] = array(
@@ -114,7 +114,7 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
   );
 
   if ($consumer->in_database) {
-    $contexts = oauth_common_context_list();
+    $contexts = oauth_context_list();
     $form['context'] = array(
       '#type' => 'item',
       '#title' => t('Application context'),
@@ -123,7 +123,7 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
   }
   else {
     $allowed_contexts = array();
-    foreach (oauth_common_context_list() as $context => $title) {
+    foreach (oauth_context_list() as $context => $title) {
       if (user_access(sprintf('oauth register consumers in %s', $context))) {
         $allowed_contexts[$context] = $title;
       }
@@ -155,7 +155,7 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
       '#type' => 'button',
       '#value' => t('Show secret'),
       '#ajax' => array(
-        'callback' => 'oauth_common_form_consumer_secret_ajax_callback',
+        'callback' => 'oauth_form_consumer_secret_ajax_callback',
         'wrapper' => 'consumer-secret-wrapper',
       ),
       '#suffix' => '</div>',
@@ -176,16 +176,16 @@ function oauth_common_form_consumer($form, &$form_state, $consumer) {
  *
  * @return void
  */
-function oauth_common_form_consumer_secret_ajax_callback($form, $form_state) {
+function oauth_form_consumer_secret_ajax_callback($form, $form_state) {
   $form['secret']['#markup'] = $form_state['values']['consumer_object']->secret;
   $form['secret']['#prefix'] = '';
   return $form['secret'];
 }
 
 /**
- * Validate handler for oauth_common_form_consumer
+ * Validate handler for oauth_form_consumer
  */
-function oauth_common_form_consumer_validate($form, &$form_state) {
+function oauth_form_consumer_validate($form, &$form_state) {
   $callback = $form_state['values']['callback_url'];
   if (!parse_url($callback) || strstr($callback, '://') === FALSE) {
     form_set_error('callback_url', t('You must set a valid URL as a callback - http/https://some-path or custom://some-path'));
@@ -193,9 +193,9 @@ function oauth_common_form_consumer_validate($form, &$form_state) {
 }
 
 /**
- * Submit handler for oauth_common_form_consumer.
+ * Submit handler for oauth_form_consumer.
  */
-function oauth_common_form_consumer_submit($form, &$form_state) {
+function oauth_form_consumer_submit($form, &$form_state) {
   $values = $form_state['values'];
   $consumer = $values['consumer_object'];
 
@@ -234,7 +234,7 @@ function oauth_common_form_consumer_submit($form, &$form_state) {
 /**
  * Consumer deletion form.
  */
-function oauth_common_form_consumer_delete($form, &$form_state, $consumer) {
+function oauth_form_consumer_delete($form, &$form_state, $consumer) {
   $form = array(
     'consumer_object' => array(
       '#type' => 'value',
@@ -258,9 +258,9 @@ function oauth_common_form_consumer_delete($form, &$form_state, $consumer) {
 }
 
 /**
- * Submit handler for oauth_common_form_consumer_delete.
+ * Submit handler for oauth_form_consumer_delete.
  */
-function oauth_common_form_consumer_delete_submit($form, &$form_state) {
+function oauth_form_consumer_delete_submit($form, &$form_state) {
   $consumer = $form_state['values']['consumer_object'];
 
   $consumer->delete();

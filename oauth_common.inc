@@ -11,10 +11,10 @@
  * @return array
  *  An array of consumer info
  */
-function oauth_common_user_consumers($uid) {
+function oauth_user_consumers($uid) {
   $result = db_query('SELECT c.secret, c.configuration, pc.*
-    FROM {oauth_common_consumer} c
-    INNER JOIN {oauth_common_provider_consumer} pc ON pc.csid = c.csid
+    FROM {oauth_consumer} c
+    INNER JOIN {oauth_provider_consumer} pc ON pc.csid = c.csid
     WHERE pc.uid = :uid', array(':uid' => $uid));
 
   $consumers = array();
@@ -33,8 +33,8 @@ function oauth_common_user_consumers($uid) {
  * @return array
  *  An array of consumer info
  */
-function oauth_common_user_access_tokens($uid) {
-  $result = db_query("SELECT * FROM {oauth_common_token} WHERE uid = :uid AND type = :type", array(
+function oauth_user_access_tokens($uid) {
+  $result = db_query("SELECT * FROM {oauth_token} WHERE uid = :uid AND type = :type", array(
     ':uid' => $uid,
     ':type' => OAUTH_COMMON_TOKEN_TYPE_ACCESS,
   ));
@@ -52,20 +52,20 @@ function oauth_common_user_access_tokens($uid) {
  *  An array containing three elements. The first is TRUE if the request was
  *  signed, otherwise FALSE. Then comes the validated consumer and token objects.
  */
-function oauth_common_verify_request() {
+function oauth_verify_request() {
   $req = DrupalOAuthRequest::from_request();
   // Verify
   $consumer_key = $req->get_parameter('oauth_consumer_key');
   if (!empty($consumer_key)) {
     $consumer = DrupalOAuthConsumer::loadProviderByKey($consumer_key);
     if ($consumer) {
-      $context = oauth_common_context_load($consumer->context);
+      $context = oauth_context_load($consumer->context);
 
       if (!$context) {
         throw new Exception('No OAuth context found');
       }
 
-      _oauth_common_verify_body_hash($req);
+      _oauth_verify_body_hash($req);
 
       // Only verify request if we got a signature
       $signature = $req->get_parameter('oauth_signature');
@@ -85,7 +85,7 @@ function oauth_common_verify_request() {
   return array(FALSE, NULL, NULL);
 }
 
-function _oauth_common_verify_body_hash($req) {
+function _oauth_verify_body_hash($req) {
   $body_hash = $req->get_parameter('oauth_body_hash');
   if ($body_hash && module_exists('inputstream')) {
     $hres = hash_init('sha1');

@@ -2,6 +2,6 @@ name = OAuth Provider UI
 description = Provides a UI for when OAuth is acting as a provider.
 package = "OAuth"
 
-dependencies[] = oauth_common
+dependencies[] = oauth
 
 core = 7.x

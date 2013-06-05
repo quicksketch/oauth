@@ -328,7 +328,7 @@ class DrupalOAuthClient {
       curl_setopt($ch, CURLOPT_POST, 1);
       curl_setopt($ch, CURLOPT_POSTFIELDS, '');
     }
-    $oauth_version = _oauth_common_version();
+    $oauth_version = _oauth_version();
     curl_setopt($ch, CURLOPT_USERAGENT, 'Drupal/' . VERSION . ' OAuth/' . $oauth_version);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_HEADER, 1);

@@ -7,11 +7,11 @@
 /**
  * Combined menu callback for tests of consumers and access tokens
  */
-function _oauth_common_validate_request_callback($type, $unsigned = NULL) {
+function _oauth_validate_request_callback($type, $unsigned = NULL) {
   try {
-    module_load_include('inc', 'oauth_common');
+    module_load_include('inc', 'oauth');
 
-    list($signed, $consumer, $token) = oauth_common_verify_request();
+    list($signed, $consumer, $token) = oauth_verify_request();
 
     if ($consumer == NULL) {
       throw new OAuthException('Missing consumer token');
@@ -37,7 +37,7 @@ function _oauth_common_validate_request_callback($type, $unsigned = NULL) {
  *
  * @param $csid Should contain the id of the consumer when used in the client flow
  */
-function oauth_common_page_authorized($csid = NULL) {
+function oauth_page_authorized($csid = NULL) {
   // If we have an oauth_token we're acting as a consumer and just got authorized
   if (!empty($_GET['oauth_token'])) {
     //TODO: Add documentation on how to use the callback url with
@@ -62,7 +62,7 @@ function oauth_common_page_authorized($csid = NULL) {
           $access_token->write();
         }
         $request_token->delete();
-        module_invoke_all('oauth_common_authorized', $consumer, $access_token, $request_token);
+        module_invoke_all('oauth_authorized', $consumer, $access_token, $request_token);
       }
     }
   }
@@ -72,10 +72,10 @@ function oauth_common_page_authorized($csid = NULL) {
 /**
  * Form for granting access to the consumer
  */
-function oauth_common_form_authorize() {
-  module_load_include('inc', 'oauth_common');
+function oauth_form_authorize() {
+  module_load_include('inc', 'oauth');
   $req = DrupalOAuthRequest::from_request();
-  $context = oauth_common_context_from_request($req);
+  $context = oauth_context_from_request($req);
   $auth_ops = $context->authorization_options;
 
   if (!$context) {
@@ -129,7 +129,7 @@ function oauth_common_form_authorize() {
       $callback['query'] = http_build_query($query, 'idx_', '&');
 
       // Return to the consumer site
-      header('Location: ' . _oauth_common_glue_url($callback), TRUE, 302);
+      header('Location: ' . _oauth_glue_url($callback), TRUE, 302);
       exit;
     }
 
@@ -230,7 +230,7 @@ function oauth_common_form_authorize() {
     unset($query['q']); // why are there so few q's?
     // Allow this path to be set to something other than the standard
     // login page in case the site has a mobile-enhanced login page.
-    $path = variable_get('oauth_common_login_path', OAUTH_COMMON_LOGIN_PATH);
+    $path = variable_get('oauth_login_path', OAUTH_COMMON_LOGIN_PATH);
     drupal_goto($path, array('query' => array(
       'destination' => url('oauth/authorize', array(
         'query' => $query,
@@ -242,12 +242,12 @@ function oauth_common_form_authorize() {
 /**
  * Validation of the form for granting access to the consumer
  */
-function oauth_common_form_authorize_validate($form, &$form_state) {
+function oauth_form_authorize_validate($form, &$form_state) {
   $values = $form_state['values'];
   $got_permission = FALSE;
 
   $consumer = $values['token']->consumer;
-  $context = oauth_common_context_load($consumer->context);
+  $context = oauth_context_load($consumer->context);
 
   if (!$context) {
     form_set_error('confirm', t("Can't find OAuth context."));
@@ -272,7 +272,7 @@ function oauth_common_form_authorize_validate($form, &$form_state) {
 /**
  * Form submit handler that grants access to the consumer
  */
-function oauth_common_form_authorize_submit(&$form, &$form_state) {
+function oauth_form_authorize_submit(&$form, &$form_state) {
   global $user;
   $values = $form_state['values'];
 
@@ -282,7 +282,7 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
   $token->uid = $user->uid;
   $token->authorized = 1;
   $consumer = $token->consumer;
-  $context = oauth_common_context_load($consumer->context);
+  $context = oauth_context_load($consumer->context);
 
   if (!$context) {
     drupal_set_message(t("Can't find OAuth context, check the site's settings."), 'error');
@@ -313,7 +313,7 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
     $callback['query'] = http_build_query($query, 'idx_', '&');
 
     // Return to the consumer site
-    header('Location: ' . _oauth_common_glue_url($callback), TRUE, 302);
+    header('Location: ' . _oauth_glue_url($callback), TRUE, 302);
     exit;
   }
   else {
@@ -324,7 +324,7 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
 /**
  * Constructs the url to which to return someone who has asked for access to a consumer
  */
-function _oauth_common_glue_url($parsed) {
+function _oauth_glue_url($parsed) {
   $uri = isset($parsed['scheme']) ? $parsed['scheme'] . '://' : '';
   $uri .= isset($parsed['user']) ? $parsed['user'] . (isset($parsed['pass']) ? ':' . $parsed['pass'] : '') . '@' : '';
   $uri .= isset($parsed['host']) ? $parsed['host'] : '';
@@ -344,10 +344,10 @@ function _oauth_common_glue_url($parsed) {
 /**
  * Generate a request token from the request.
  */
-function oauth_common_callback_request_token() {
+function oauth_callback_request_token() {
   try {
     $req = DrupalOAuthRequest::from_request();
-    $context = oauth_common_context_from_request($req);
+    $context = oauth_context_from_request($req);
     if (!$context) {
       throw new OAuthException('No OAuth context found');
     }
@@ -363,10 +363,10 @@ function oauth_common_callback_request_token() {
 /**
  * Get a access token for the request
  */
-function oauth_common_callback_access_token() {
+function oauth_callback_access_token() {
   try {
     $req = DrupalOAuthRequest::from_request();
-    $context = oauth_common_context_from_request($req);
+    $context = oauth_context_from_request($req);
     if (!$context) {
       throw new OAuthException('No OAuth context found');
     }

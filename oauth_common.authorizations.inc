@@ -4,7 +4,7 @@
  * Functions related to a user's authorization section
  */
 
-function oauth_common_page_user_authorizations($account) {
+function oauth_page_user_authorizations($account) {
   $header = array(
     array('data' => t('Application'), 'class' =>  array("oauth-common-authorization-application")),
     array('data' => t('Key'),         'class' =>  array("oauth-common-authorization-key")),
@@ -13,7 +13,7 @@ function oauth_common_page_user_authorizations($account) {
     array('data' => t('Operations'),  'class' =>  array("oauth-common-authorization-operations")),
   );
 
-  $access_tokens = oauth_common_get_user_provider_tokens($account->uid);
+  $access_tokens = oauth_get_user_provider_tokens($account->uid);
   $rows = array();
 
   foreach ($access_tokens as $token) {
@@ -79,11 +79,11 @@ function oauth_common_page_user_authorizations($account) {
  * @param object $consumer
  *   A DrupalOAuthConsumer instance.
  */
-function oauth_common_authorization_add($account, $consumer) {
+function oauth_authorization_add($account, $consumer) {
   $token = new DrupalOAuthToken(user_password(32), user_password(32), $consumer, array(
     'uid' => $account->uid,
   ));
-  return drupal_get_form('oauth_common_form_authorization', $token);
+  return drupal_get_form('oauth_form_authorization', $token);
 }
 
 /**
@@ -96,11 +96,11 @@ function oauth_common_authorization_add($account, $consumer) {
  * neglecting to notify me that this function was being called with one too few 
  * arguments. Go team.
  */
-function oauth_common_form_authorization($form_id, &$form_state, $token) {
+function oauth_form_authorization($form_id, &$form_state, $token) {
   $form = array();
 
   $consumer = $token->consumer;
-  $context = oauth_common_context_load($consumer->context);
+  $context = oauth_context_load($consumer->context);
 
   drupal_set_title(t('Authorization for @app', array('@app' => $consumer->name)), PASS_THROUGH);
 
@@ -145,7 +145,7 @@ function oauth_common_form_authorization($form_id, &$form_state, $token) {
       '#type' => 'button',
       '#value' => t('Show secret'),
       '#ajax' => array(
-        'callback' => 'oauth_common_form_authorization_secret_ajax_callback',
+        'callback' => 'oauth_form_authorization_secret_ajax_callback',
         'wrapper' => 'token-secret-wrapper',
       ),
       '#suffix' => '</div>',
@@ -165,7 +165,7 @@ function oauth_common_form_authorization($form_id, &$form_state, $token) {
   );
 
   global $user;
-  oauth_common_permissions_form($user, $form['allowed'], $consumer, $context, $token->services);
+  oauth_permissions_form($user, $form['allowed'], $consumer, $context, $token->services);
 
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
@@ -181,13 +181,13 @@ function oauth_common_form_authorization($form_id, &$form_state, $token) {
  *
  * @return void
  */
-function oauth_common_form_authorization_secret_ajax_callback($form, $form_state) {
+function oauth_form_authorization_secret_ajax_callback($form, $form_state) {
   $form['secret']['#markup'] = $form_state['values']['token_object']->secret;
   $form['secret']['#prefix'] = '';
   return $form['secret'];
 }
 
-function oauth_common_permissions_form($account, &$form, $consumer, $context, $default_services = array('*')) {
+function oauth_permissions_form($account, &$form, $consumer, $context, $default_services = array('*')) {
   $tvars = array(
     '@appname' => $consumer->name,
     '@user' => $account->name,
@@ -207,7 +207,7 @@ function oauth_common_permissions_form($account, &$form, $consumer, $context, $d
   }
 }
 
-function oauth_common_form_authorization_submit($form, &$form_state) {
+function oauth_form_authorization_submit($form, &$form_state) {
   $values = $form_state['values'];
   $token = $values['token_object'];
   $consumer = $token->consumer;
@@ -231,10 +231,10 @@ function oauth_common_form_authorization_submit($form, &$form_state) {
  * Provide a form for deleting an authorization.
  *
  * We've got the same symptom here that we do with 
- * `oauth_common_form_authorization`, i.e., this is actually called by 
+ * `oauth_form_authorization`, i.e., this is actually called by 
  * `drupal_retrieve_form`.
  */
-function oauth_common_form_authorization_delete($form_id, &$form_state, $user, $token) {
+function oauth_form_authorization_delete($form_id, &$form_state, $user, $token) {
   $consumer = $token->consumer;
 
   $cancel_url = 'user/%d/oauth/authorizations';
@@ -285,7 +285,7 @@ function oauth_common_form_authorization_delete($form_id, &$form_state, $user, $
   return $form;
 }
 
-function oauth_common_form_authorization_delete_submit($form, &$form_state) {
+function oauth_form_authorization_delete_submit($form, &$form_state) {
   $values = $form_state['values'];
   $token = $values['token_object'];
   $consumer = $token->consumer;

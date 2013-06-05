@@ -7,18 +7,18 @@
 /**
  * Implements hook_requirements().
  */
-function oauth_common_requirements($phase) {
+function oauth_requirements($phase) {
   $requirements = array();
   $t = get_t();
   $curl_available = function_exists('curl_init');
 
-  $requirements['oauth_common_curl'] = array(
+  $requirements['oauth_curl'] = array(
     'title' => $t('OAuth'),
     'value' => $curl_available ? $t('cURL library Enabled') : $t('cURL library not found'),
   );
 
   if (!$curl_available) {
-    $requirements['oauth_common_curl'] += array(
+    $requirements['oauth_curl'] += array(
       'severity' => REQUIREMENT_ERROR,
       'description' => $t("DrupalOAuthClient requires the PHP <a href='!curl_url'>cURL</a> library.",
         array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
@@ -31,18 +31,18 @@ function oauth_common_requirements($phase) {
 /**
  * Implements hook_schema().
  */
-function oauth_common_schema() {
+function oauth_schema() {
   $schema = array();
 
-  $schema['oauth_common_context'] = array(
+  $schema['oauth_context'] = array(
     'description' => 'Stores contexts for OAuth common',
     'export' => array(
       'identifier'      => 'context',
-      'export callback' => 'oauth_common_context_export',
-      'list callback'   => 'oauth_common_context_list',
+      'export callback' => 'oauth_context_export',
+      'list callback'   => 'oauth_context_list',
       'key'             => 'name',
       'api' => array(
-        'owner' => 'oauth_common',
+        'owner' => 'oauth',
         'api'   => 'oauth',
         'minimum_version' => 1,
         'current_version' => 1,
@@ -90,12 +90,12 @@ function oauth_common_schema() {
     ),
   );
 
-  $schema['oauth_common_consumer'] = _oauth_common_consumer_schema();
-  $schema['oauth_common_provider_consumer'] = _oauth_common_provider_consumer_schema();
-  $schema['oauth_common_token'] = _oauth_common_token_schema();
-  $schema['oauth_common_provider_token'] = _oauth_common_provider_token_schema();
+  $schema['oauth_consumer'] = _oauth_consumer_schema();
+  $schema['oauth_provider_consumer'] = _oauth_provider_consumer_schema();
+  $schema['oauth_token'] = _oauth_token_schema();
+  $schema['oauth_provider_token'] = _oauth_provider_token_schema();
 
-  $schema['oauth_common_nonce'] = array(
+  $schema['oauth_nonce'] = array(
     'description' => 'Stores timestamp against nonce for repeat attacks.',
     'fields' => array(
       'nonce' => array(
@@ -127,9 +127,9 @@ function oauth_common_schema() {
 }
 
 /**
- * Contains the consumer schema - used by oauth_common_schema() as well as latest related update function
+ * Contains the consumer schema - used by oauth_schema() as well as latest related update function
  */
-function _oauth_common_consumer_schema() {
+function _oauth_consumer_schema() {
   return array(
     'description' => 'Keys and secrets for OAuth consumers, both those provided by this site and other sites.',
     'fields' => array(
@@ -172,14 +172,14 @@ function _oauth_common_consumer_schema() {
 }
 
 /**
- * Contains the provider consumer schema - used by oauth_common_schema() as well as latest related update function
+ * Contains the provider consumer schema - used by oauth_schema() as well as latest related update function
  */
-function _oauth_common_provider_consumer_schema() {
+function _oauth_provider_consumer_schema() {
   return array(
     'description' => 'Additional data for OAuth consumers provided by this site.',
     'fields' => array(
       'csid' => array(
-        'description' => 'The {oauth_common_consumer}.csid this data is related to.',
+        'description' => 'The {oauth_consumer}.csid this data is related to.',
         'type' => 'int',
         'unsigned' => TRUE,
         'default' => 0
@@ -237,8 +237,8 @@ function _oauth_common_provider_consumer_schema() {
        'uid' => array('uid'),
     ),
     'foreign keys' => array(
-      'oauth_common_consumer' => array(
-        'table' => 'oauth_common_consumer',
+      'oauth_consumer' => array(
+        'table' => 'oauth_consumer',
         'columns' => array('csid' => 'csid')
       ),
       'users' => array(
@@ -250,9 +250,9 @@ function _oauth_common_provider_consumer_schema() {
 }
 
 /**
- * Contains the token schema - used by oauth_common_schema() as well as latest related update function
+ * Contains the token schema - used by oauth_schema() as well as latest related update function
  */
-function _oauth_common_token_schema() {
+function _oauth_token_schema() {
   return array(
     'description' => 'Tokens stored on behalf of providers or consumers for request and services accesses.',
     'fields' => array(
@@ -262,7 +262,7 @@ function _oauth_common_token_schema() {
         'not null'    => TRUE,
       ),
       'csid' => array(
-        'description' => 'The {oauth_common_consumer}.csid this token is related to.',
+        'description' => 'The {oauth_consumer}.csid this token is related to.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -311,8 +311,8 @@ function _oauth_common_token_schema() {
       'key_hash' => array('key_hash'),
     ),
     'foreign keys' => array(
-      'oauth_common_consumer' => array(
-        'table' => 'oauth_common_consumer',
+      'oauth_consumer' => array(
+        'table' => 'oauth_consumer',
         'columns' => array('csid' => 'csid')
       ),
       'users' => array(
@@ -324,14 +324,14 @@ function _oauth_common_token_schema() {
 }
 
 /**
- * Contains the provider token schema - used by oauth_common_schema() as well as latest related update function
+ * Contains the provider token schema - used by oauth_schema() as well as latest related update function
  */
-function _oauth_common_provider_token_schema() {
+function _oauth_provider_token_schema() {
   return array(
     'description' => 'Additional data for OAuth tokens provided by this site.',
     'fields' => array(
       'tid' => array(
-        'description' => 'The {oauth_common_token}.tid this data is related to.',
+        'description' => 'The {oauth_token}.tid this data is related to.',
         'type' => 'int',
         'unsigned' => TRUE,
         'default' => 0
@@ -372,8 +372,8 @@ function _oauth_common_provider_token_schema() {
       'tid' => array('tid'),
     ),
     'foreign keys' => array(
-      'oauth_common_token' => array(
-        'table' => 'oauth_common_token',
+      'oauth_token' => array(
+        'table' => 'oauth_token',
         'columns' => array('tid' => 'tid')
       ),
     ),
