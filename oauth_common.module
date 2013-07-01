@@ -156,7 +156,12 @@ function oauth_common_consumer_load($csid) {
  * @param string $key
  */
 function oauth_common_provider_token_load($tid) {
-  $token = DrupalOAuthToken::loadByID($tid);
+  if (strlen($tid) == 32) {
+    $token = DrupalOAuthToken::loadByKey($tid);
+  }
+  else {
+    $token = DrupalOAuthToken::loadByID($tid);
+  }
   if (!$token) {
     $token = FALSE;
   }
@@ -296,8 +301,14 @@ function services_oauth_xrds() {
  * @param string $permission
  *  The permission that is needed in addition to edit access on the $user.
  */
-function _oauth_common_user_access($user, $permission = NULL) {
-  return user_edit_access($user) && (empty($permission) || user_access($permission));
+function _oauth_common_user_access($user, $permission = NULL, $token = NULL) {
+  $user_permission_access = empty($permission) || user_access($permission);
+  // If we have a context check and do not have elevated (any) privs
+  if (!$user_permission_access && !is_null($token)) {
+     $permission = str_replace('any ', '', $permission) . ' in ' . $token->consumer->context;
+     $user_permission_access = user_access($permission);
+  }
+  return user_edit_access($user) && $user_permission_access;
 }
 
 /**

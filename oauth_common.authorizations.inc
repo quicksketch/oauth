@@ -38,13 +38,13 @@ function oauth_common_page_user_authorizations($account) {
 
     $operations[] = array(
       'title' => t('Edit'),
-      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->key),
+      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->tid),
       'query' => array('destination' => $_GET['q']),
     );
 
     $operations[] = array(
       'title' => t('Delete'),
-      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->key) . '/delete',
+      'href'  => sprintf('user/%d/oauth/authorizations/%s', $account->uid, $token->tid) . '/delete',
       'query' => array('destination' => $_GET['q']),
     );
 
@@ -120,7 +120,7 @@ function oauth_common_form_authorization($form_state, $token) {
       '#value' => substr($token->secret, 0, 6) . '...',
     );
 
-    $ahah_path = "user/{$token->uid}/oauth/authorizations/{$token->key}/ahah/secret";
+    $ahah_path = "user/{$token->uid}/oauth/authorizations/{$token->tid}/ahah/secret";
     $form['show_secret'] = array(
       '#type' => 'button',
       '#value' => t('Show secret'),
@@ -175,6 +175,7 @@ function oauth_common_permissions_form($account, &$form, $consumer, $context, $d
 }
 
 function oauth_common_form_authorization_submit($form, $form_state) {
+  global $user;
   $values = $form_state['values'];
   $token = $values['token_object'];
   $consumer = $token->consumer;
@@ -190,7 +191,7 @@ function oauth_common_form_authorization_submit($form, $form_state) {
   drupal_set_message(t('The @consumer token @token was updated.', array(
     '@consumer' => $consumer->name,
     '@token' => $token->key)));
-  drupal_goto(sprintf('user/%d/applications', $form_state['values']['user']));
+  drupal_goto(sprintf('user/%d/oauth/authorizations', $user->uid));
 }
 
 function oauth_common_form_authorization_delete($form_state, $user, $token) {
@@ -232,7 +233,7 @@ function oauth_common_form_authorization_delete($form_state, $user, $token) {
 
   $form['cancel'] = array(
     '#type' => 'item',
-    '#value' => l(t('Cancel'), sprintf($cancel_url, $user->uid, $token->key)),
+    '#value' => l(t('Cancel'), sprintf($cancel_url, $user->uid, $token->tid)),
   );
 
   $form['submit'] = array(

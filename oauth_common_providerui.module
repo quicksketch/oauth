@@ -98,7 +98,7 @@ function oauth_common_providerui_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('oauth_common_form_authorization', 4),
     'access callback' => '_oauth_common_user_access',
-    'access arguments' => array(1, 'oauth authorize consumers'),
+    'access arguments' => array(1, 'oauth authorize any consumers', 4),
     'file' => 'oauth_common.authorizations.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -107,7 +107,7 @@ function oauth_common_providerui_menu() {
     'page callback' => 'oauth_common_ahah_secret',
     'page arguments' => array(4),
     'access callback' => '_oauth_common_user_access',
-    'access arguments' => array(1, 'oauth authorize consumers'),
+    'access arguments' => array(1, 'oauth authorize any consumers', 4),
     'file' => 'oauth_common.inc',
     'type' => MENU_CALLBACK,
   );
