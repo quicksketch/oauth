@@ -21,6 +21,13 @@ use \OauthProvider;
 class OAuthDrupalProvider implements AuthenticationProviderInterface {
 
   /**
+   * An authenticated user object.
+   *
+   * @var \Drupal\user\UserBCDecorator
+   */
+  protected $user;
+
+  /**
    * {@inheritdoc}
    */
   public function applies(Request $request) {
@@ -41,10 +48,10 @@ class OAuthDrupalProvider implements AuthenticationProviderInterface {
 
     // Now check the request validity.
     $this->provider->checkOAuthRequest();
-    $user = user_load(1);
-    return $user;
-
-    //return NULL;
+    if (!empty($this->user)) {
+      return $this->user;
+    }
+    return NULL;
   }
 
   /**
@@ -59,30 +66,45 @@ class OAuthDrupalProvider implements AuthenticationProviderInterface {
     return FALSE;
   }
 
+  /**
+   * Finds a user associated with the OAuth crendentials given in the request.
+   *
+   * For the moment it handles two legged authentication for a pair of
+   * dummy key and secret, 'a' and 'b' respectively.
+   *
+   * @param \OAuthProvider
+   *   An instance of OauthProvider with the authorization request headers.
+   * @return
+   *   constant OAUTH_OK if the authentication was successfull.
+   *   OAUTH_CONSUMER_KEY_UNKNOWN if not.
+   * @see http://www.php.net/manual/en/class.oauthprovider.php
+   */
   public function lookupConsumer($provider) {
-    dd(array(__LINE__, $provider));
-    /*$sql = 'select consumer_secret from oauth_consumers '
-        . 'where consumer_key = :key';
-    $stmt = $db->prepare($sql);
-    $response = $stmt->execute(array(
-        ':key' => $provider->token
-        ));
-    if($response) {
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // just one row needed
-        $consumer = $results[0];
-    }*/
-    $provider->consumer_secret = 'b';
-    return OAUTH_OK;
+    if ($provider->consumer_key == 'a') {
+      $provider->consumer_secret = 'b';
+      $this->user = user_load(1);
+      return OAUTH_OK;
+    }
+    else {
+      return OAUTH_CONSUMER_KEY_UNKNOWN;
+    }
   }
 
+  /**
+   * Token handler callback.
+   *
+   * @TODO this will be used in token authorization.
+   */
   public function tokenHandler($provider) {
-    dd(array(__LINE__, $provider));
     return OAUTH_OK;
   }
 
+  /**
+   * Nonce handler.
+   *
+   * @TODO need to remember what the hell this was.
+   */
   public function timestampNonceChecker($provider) {
-    dd(array(__LINE__, $provider));
     return OAUTH_OK;
   }
 }
