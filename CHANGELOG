@@ -2,6 +2,7 @@ OAuth 7.x-3.x, 2013--
 ------------------------------
 Issue #1987350 by juampy: Fixed Warnings when authorizing a consumer via the user interface.
 Issue #1907970 by John Franklin: Fixed patch files snuck into the repository.
+Issue #1809068 by kylebrowning, MrMaksimize, Deciphered: Fixed Cannot leave callback formfield blank even though it is not required.
 ...
 
 OAuth 7.x-3.1, 2013-2-3
