@@ -4,43 +4,6 @@
  * Administration pages for OAuth module.
  */
 
-function _oauth_admin() {
-  $form = array();
-
-  $form['oauth_enable_provider'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable the oauth provider'),
-    '#default_value' => variable_get('oauth_enable_provider', TRUE),
-    '#description' => t('This option controls whether this site should act as a OAuth provider or not'),
-  );
-
-  $form['oauth_request_token_lifetime'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Request token lifetime (in seconds)'),
-    '#default_value' => variable_get('oauth_request_token_lifetime', 7200),
-  );
-
-  $form['oauth_login_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Login page'),
-    '#description' => t('Specify an alternative login page. This is useful when, for example, you want to show a mobile-enhanced login page.'),
-    '#default_value' => variable_get('oauth_login_path', OAUTH_COMMON_LOGIN_PATH),
-  );
-
-  $form['#validate'][] = '_oauth_admin_settings_validate';
-
-  return system_settings_form($form);
-}
-
-function _oauth_admin_settings_validate($form, $form_state) {
-  $values = $form_state['values'];
-
-  $lifetime = intval($values['oauth_request_token_lifetime'], 10);
-  if (!$lifetime) {
-    form_set_error('oauth_request_token_lifetime', t('The request token lifetime must be a non-zero integer value.'));
-  }
-}
-
 /**
  * Output a list of contexts.
  */

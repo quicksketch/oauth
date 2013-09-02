@@ -1,8 +1,9 @@
 <?php
 /**
- * file
- * OAuth module
+ * @file
+ * Hook implementations for OAuth module.
  */
+
 define('OAUTH_COMMON_CODE_BRANCH', '7.x-3.x');
 define('OAUTH_COMMON_TOKEN_TYPE_REQUEST', 0);
 define('OAUTH_COMMON_TOKEN_TYPE_ACCESS', 1);
@@ -73,10 +74,9 @@ function oauth_menu() {
   $menu['admin/config/services/oauth'] = array(
     'title' => 'OAuth',
     'description' => 'Settings for OAuth',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('_oauth_admin'),
+    'route_name' => 'oauth.admin_form',
     'type' => MENU_NORMAL_ITEM,
-  ) + $admin_base;
+  );
 
   $menu['admin/config/services/oauth/settings'] = array(
     'title' => 'Settings',

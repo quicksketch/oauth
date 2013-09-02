@@ -1,0 +1,7 @@
+oauth.admin_form:
+  pattern: '/admin/config/services/oauth'
+  defaults:
+    _form: 'Drupal\oauth\Form\OAuthSettingsForm'
+  requirements:
+    _permission: 'administer oauth'
+
