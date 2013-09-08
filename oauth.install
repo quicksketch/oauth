@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Installation and schema related functions for the OAuth module
+ * Installation and schema related functions for the OAuth module.
  */
 
 /**
@@ -9,18 +9,18 @@
  */
 function oauth_requirements($phase) {
   $requirements = array();
-  $curl_available = function_exists('curl_init');
+  $oauth_available = class_exists('\\OauthProvider');
 
-  $requirements['oauth_curl'] = array(
+  $requirements['oauth_pecl'] = array(
     'title' => t('OAuth'),
-    'value' => $curl_available ? t('cURL library Enabled') : t('cURL library not found'),
+    'value' => $oauth_available ? t('OAuth PECL library installed') : t('OAuth PECL library not installed'),
   );
 
-  if (!$curl_available) {
-    $requirements['oauth_curl'] += array(
+  if (!$oauth_available) {
+    $requirements['oauth_pecl'] += array(
       'severity' => REQUIREMENT_ERROR,
-      'description' => t("DrupalOAuthClient requires the PHP <a href='!curl_url'>cURL</a> library.",
-        array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
+      'description' => t("OAuth module requires the <a href='!oauth_url' target='_blank'>PECL OAuth</a> library.",
+        array('!oauth_url' => 'http://www.php.net/manual/en/book.oauth.php')),
     );
   }
 
