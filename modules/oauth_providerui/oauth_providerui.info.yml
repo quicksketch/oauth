@@ -1,0 +1,7 @@
+name: OAuth Provider UI
+type: module
+description: "Provides a UI for when OAuth is acting as a provider."
+package: OAuth
+core: 8.x
+dependencies:
+  - oauth
