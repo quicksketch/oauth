@@ -1,5 +1,5 @@
 oauth.admin_form:
-  pattern: '/admin/config/services/oauth'
+  path: '/admin/config/services/oauth'
   defaults:
     _form: 'Drupal\oauth\Form\OAuthSettingsForm'
   requirements:
