@@ -92,7 +92,6 @@ function oauth_menu() {
   // with a context.
 
   $provider_base = array(
-    'access callback' => 'oauth_commmon_is_provider',
     'file' => 'oauth.pages.inc',
     'type' => MENU_CALLBACK,
   );
@@ -131,7 +130,6 @@ function oauth_menu() {
     'file' => 'oauth.pages.inc',
     'page callback' => '_oauth_validate_request_callback',
     'page arguments' => array('consumer'),
-    'access callback' => 'oauth_commmon_is_provider',
     'type' => MENU_CALLBACK,
   );
 
@@ -139,7 +137,6 @@ function oauth_menu() {
     'file' => 'oauth.pages.inc',
     'page callback' => '_oauth_validate_request_callback',
     'page arguments' => array('access token'),
-    'access callback' => 'oauth_commmon_is_provider',
     'type' => MENU_CALLBACK,
   );
 
@@ -384,13 +381,6 @@ function _oauth_always_true() {
  */
 function oauth_can_authorize_consumer($consumer) {
   return user_access(sprintf('oauth authorize consumers in %s', $consumer->context));
-}
-
-/**
- * Check if oauth is acting as a provider.
- */
-function oauth_commmon_is_provider() {
-  return variable_get('oauth_enable_provider', TRUE);
 }
 
 /**

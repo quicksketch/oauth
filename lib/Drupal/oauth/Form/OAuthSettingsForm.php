@@ -52,13 +52,6 @@ class OAuthSettingsForm extends ConfigFormBase {
 
     $form = array();
 
-    $form['enable_provider'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Enable the oauth provider'),
-      '#default_value' => $config->get('enable_provider'),
-      '#description' => t('This option controls whether this site should act as a OAuth provider or not'),
-    );
-
     $form['request_token_lifetime'] = array(
       '#type' => 'textfield',
       '#title' => t('Request token lifetime (in seconds)'),
@@ -95,7 +88,6 @@ class OAuthSettingsForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
 
     $config = $this->configFactory->get('oauth.settings')
-      ->set('enable_provider',$form_state['values']['enable_provider'])
       ->set('request_token_lifetime',$form_state['values']['request_token_lifetime'])
       ->set('login_path',$form_state['values']['login_path'])
     ->save();
