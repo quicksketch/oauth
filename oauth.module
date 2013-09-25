@@ -140,6 +140,18 @@ function oauth_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $menu['user/%user/oauth/consumer'] = array(
+    'title' => 'OAuth Consumers',
+    'route_name' => 'oauth.user_consumer',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $menu['user/%user/oauth/consumer/add'] = array(
+    'title' => 'Add an OAuth Consumer',
+    'route_name' => 'oauth.user_consumer_add',
+    'type' => MENU_CALLBACK,
+  );
+
   return $menu;
 }
 
