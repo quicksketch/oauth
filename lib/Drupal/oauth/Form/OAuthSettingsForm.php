@@ -7,7 +7,7 @@
 
 namespace Drupal\oauth\Form;
 
-use \Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Config\Context\ContextInterface;
 use Drupal\Core\Path\AliasManagerInterface;
