@@ -572,23 +572,3 @@ function oauth_context_list() {
   }
   return $return;
 }
-
-/**
- * Finds the current version of the OAuth module, used in eg. user agents
- *
- * @return string
- */
-function _oauth_version() {
-  static $version;
-  if (!isset($version)) {
-    $info = db_query("SELECT info FROM {system} WHERE name = 'oauth'")->fetchField();
-    $info = $info ? unserialize($info) : FALSE;
-    if (!$info || empty($info['version'])) {
-      $version = OAUTH_COMMON_CODE_BRANCH;
-    }
-    else {
-      $version = $info['version'];
-    }
-  }
-  return $version;
-}
