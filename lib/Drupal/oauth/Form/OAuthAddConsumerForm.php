@@ -7,17 +7,25 @@
 
 namespace Drupal\oauth\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormBase;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Config\Context\ContextInterface;
 use Drupal\Core\Path\AliasManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Drupal\user\UserInterface;
 
 /**
  * Provides a form to add OAuth consumers.
  */
-class OAuthAddConsumerForm extends ConfigFormBase {
+class OAuthAddConsumerForm extends FormBase {
+
+  /**
+   * The URL generator to use.
+   *
+   * @var \Symfony\Component\Routing\Generator\UrlGeneratorInterface
+   */
+  protected $urlGenerator;
 
   /**
    * {@inheritdoc}
@@ -27,12 +35,31 @@ class OAuthAddConsumerForm extends ConfigFormBase {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('url_generator')
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @param \Symfony\Component\Routing\Generator\UrlGeneratorInterface $url_generator
+   *   The URL generator service.
+   */
+  public function __construct(UrlGeneratorInterface $url_generator) {
+    $this->urlGenerator = $url_generator;
+  }
+
+  /**
    * Form builder.
    *
    * @param \Drupal\user\UserInterface $user
    *   A user account object.
    */
-  public function buildForm(array $form, array &$form_state, UserInterface $user){
+  public function buildForm(array $form, array &$form_state, UserInterface $user = NULL) {
     $form = array();
 
     $form['name'] = array(
@@ -41,32 +68,40 @@ class OAuthAddConsumerForm extends ConfigFormBase {
       '#required' => TRUE,
     );
 
-    $form['callback_url'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Callback url'),
-      '#required' => FALSE,
-      '#description' => t('You must include a schema for this to work correctly, ie. http:// or iphoneappname://'),
+    $form['uid'] = array(
+      '#type' => 'value',
+      '#value' => $user->id(),
     );
 
-    $form['actions'] = array('#type' => 'actions');
-    $form['actions']['submit'] = array(
+    $form['save'] = array(
       '#type' => 'submit',
-      '#value' => t('Save'),
+      '#value' => $this->t('Add'),
     );
 
-    return parent::buildForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function validateForm(array &$form, array &$form_state) {
+    return $form;
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, array &$form_state) {
+    $values = $form_state['values'];
+
+    $consumer_key = user_password(32);
+    $consumer_secret  = user_password(32);
+    $key_hash = sha1($consumer_key);
+    db_insert('oauth_consumer')
+      ->fields(array(
+          'uid' => $values['uid'],
+          'name' => $values['name'],
+          'consumer_key' => $consumer_key,
+          'consumer_secret' => $consumer_secret,
+          'key_hash' => $key_hash,
+      ))
+      ->execute();
+
+    drupal_set_message(t('Updated the consumer @name', array('@name' => $values['name'])));
+    $form_state['redirect'] = $this->urlGenerator->generate('oauth.user_consumer', array('user' => $values['uid']), TRUE);
   }
 
 }

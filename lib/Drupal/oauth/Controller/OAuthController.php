@@ -39,7 +39,64 @@ class OAuthController implements ContainerInjectionInterface {
    *   A HTML-formatted string with the list of OAuth consumers.
    */
   public function consumers(UserInterface $user) {
-    return l(t('Add consumer'), 'user/' . $user->id() . '/oauth/consumer/add');
+    $list = array();
+
+    $list['heading']['#markup'] = l(t('Add consumer'), 'user/' . $user->id() . '/oauth/consumer/add');
+
+    // Get the list of consumers.
+    $result = db_query('select *
+                        from {oauth_consumer}
+                        where uid = :uid', array(':uid' => $user->id()));
+
+    // Define table headers.
+    $list['table'] = array(
+      '#theme' => 'table',
+      '#header' => array(
+        'name' => array(
+          'data' => t('Consumer name'),
+        ),
+        'consumer_key' => array(
+          'data' => t('Consumer key'),
+        ),
+        'operations' => array(
+          'data' => t('Operations'),
+        ),
+      ),
+      '#rows' => array(),
+    );
+
+    // Add existing consumers to the table.
+    foreach ($result as $row) {
+      $list['table']['#rows'][] = array(
+        'data' => array(
+          'name' => $row->name,
+          'consumer_key' => $row->consumer_key,
+          'operations' => array(
+            'data' => array(
+              '#type' => 'operations',
+              '#links' => array(
+                'view' => array(
+                  'title' => t('View'),
+                  'href' => '',
+                ),
+                'edit' => array(
+                  'title' => t('Edit'),
+                  'href' => '',
+                ),
+                'delete' => array(
+                  'title' => t('Delete'),
+                  'href' => '',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    $list['table']['#empty'] = t('There are no OAuth consumers.');
+
+    return $list;
   }
 
 }

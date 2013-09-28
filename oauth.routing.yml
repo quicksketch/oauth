@@ -16,3 +16,5 @@ oauth.user_consumer_add:
   path: 'user/{user}/oauth/consumer/add'
   defaults:
     _form: 'Drupal\oauth\Form\OAuthAddConsumerForm'
+  requirements:
+    _permission: 'access own consumers'
