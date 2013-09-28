@@ -47,10 +47,10 @@ function oauth_schema() {
         'unsigned'    => TRUE,
         'not null'    => TRUE,
       ),
-      'name' => array(
-        'description' => 'The application name.',
+      'description' => array(
+        'description' => 'A description for this OAuth consumer.',
         'type'        => 'varchar',
-        'length'      => 128,
+        'length'      => 255,
         'not null'    => TRUE,
       ),
       'key_hash' => array(

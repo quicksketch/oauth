@@ -62,9 +62,9 @@ class OAuthAddConsumerForm extends FormBase {
   public function buildForm(array $form, array &$form_state, UserInterface $user = NULL) {
     $form = array();
 
-    $form['name'] = array(
+    $form['description'] = array(
       '#type' => 'textfield',
-      '#title' => t('Consumer name'),
+      '#title' => t('Description'),
       '#required' => TRUE,
     );
 
@@ -93,14 +93,14 @@ class OAuthAddConsumerForm extends FormBase {
     db_insert('oauth_consumer')
       ->fields(array(
           'uid' => $values['uid'],
-          'name' => $values['name'],
+          'description' => $values['description'],
           'consumer_key' => $consumer_key,
           'consumer_secret' => $consumer_secret,
           'key_hash' => $key_hash,
       ))
       ->execute();
 
-    drupal_set_message(t('Updated the consumer @name', array('@name' => $values['name'])));
+    drupal_set_message(t('Added the consumer @description', array('@description' => $values['description'])));
     $form_state['redirect'] = $this->urlGenerator->generate('oauth.user_consumer', array('user' => $values['uid']), TRUE);
   }
 

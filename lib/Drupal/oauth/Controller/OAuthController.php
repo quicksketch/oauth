@@ -52,11 +52,14 @@ class OAuthController implements ContainerInjectionInterface {
     $list['table'] = array(
       '#theme' => 'table',
       '#header' => array(
-        'name' => array(
-          'data' => t('Consumer name'),
-        ),
         'consumer_key' => array(
           'data' => t('Consumer key'),
+        ),
+        'consumer_secret' => array(
+          'data' => t('Consumer secret'),
+        ),
+        'description' => array(
+          'data' => t('Description'),
         ),
         'operations' => array(
           'data' => t('Operations'),
@@ -69,8 +72,9 @@ class OAuthController implements ContainerInjectionInterface {
     foreach ($result as $row) {
       $list['table']['#rows'][] = array(
         'data' => array(
-          'name' => $row->name,
           'consumer_key' => $row->consumer_key,
+          'consumer_secret' => $row->consumer_secret,
+          'description' => $row->description,
           'operations' => array(
             'data' => array(
               '#type' => 'operations',
