@@ -13,7 +13,6 @@ use Drupal\Core\Config\Context\ContextInterface;
 use Drupal\Core\Path\AliasManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Drupal\user\UserInterface;
 
 /**
  * Provides a form to add OAuth consumers.
@@ -55,24 +54,8 @@ class OAuthAddConsumerForm extends FormBase {
 
   /**
    * Form builder.
-   *
-   * @param \Drupal\user\UserInterface $user
-   *   A user account object.
    */
-  public function buildForm(array $form, array &$form_state, UserInterface $user = NULL) {
-    $form = array();
-
-    $form['description'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Description'),
-      '#required' => TRUE,
-    );
-
-    $form['uid'] = array(
-      '#type' => 'value',
-      '#value' => $user->id(),
-    );
-
+  public function buildForm(array $form, array &$form_state) {
     $form['save'] = array(
       '#type' => 'submit',
       '#value' => $this->t('Add'),
@@ -86,22 +69,22 @@ class OAuthAddConsumerForm extends FormBase {
    */
   public function submitForm(array &$form, array &$form_state) {
     $values = $form_state['values'];
+    $account = \Drupal::currentUser();
 
     $consumer_key = user_password(32);
     $consumer_secret  = user_password(32);
     $key_hash = sha1($consumer_key);
     db_insert('oauth_consumer')
       ->fields(array(
-          'uid' => $values['uid'],
-          'description' => $values['description'],
+          'uid' => $account->id(),
           'consumer_key' => $consumer_key,
           'consumer_secret' => $consumer_secret,
           'key_hash' => $key_hash,
       ))
       ->execute();
 
-    drupal_set_message(t('Added the consumer @description', array('@description' => $values['description'])));
-    $form_state['redirect'] = $this->urlGenerator->generate('oauth.user_consumer', array('user' => $values['uid']), TRUE);
+    drupal_set_message(t('Added a new consumer.'));
+    $form_state['redirect'] = $this->urlGenerator->generate('oauth.user_consumer', array('user' => $account->id()), TRUE);
   }
 
 }

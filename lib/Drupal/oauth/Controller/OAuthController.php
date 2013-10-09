@@ -10,6 +10,7 @@ namespace Drupal\oauth\Controller;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\user\UserInterface;
+use Drupal\oauth\Form\OAuthDeleteConsumerForm;
 
 /**
  * Controller routines for book routes.
@@ -39,9 +40,10 @@ class OAuthController implements ContainerInjectionInterface {
    *   A HTML-formatted string with the list of OAuth consumers.
    */
   public function consumers(UserInterface $user) {
+    $request = \Drupal::request();
     $list = array();
 
-    $list['heading']['#markup'] = l(t('Add consumer'), 'user/' . $user->id() . '/oauth/consumer/add');
+    $list['heading']['#markup'] = l(t('Add consumer'), 'oauth/consumer/add');
 
     // Get the list of consumers.
     $result = db_query('select *
@@ -58,9 +60,6 @@ class OAuthController implements ContainerInjectionInterface {
         'consumer_secret' => array(
           'data' => t('Consumer secret'),
         ),
-        'description' => array(
-          'data' => t('Description'),
-        ),
         'operations' => array(
           'data' => t('Operations'),
         ),
@@ -74,22 +73,13 @@ class OAuthController implements ContainerInjectionInterface {
         'data' => array(
           'consumer_key' => $row->consumer_key,
           'consumer_secret' => $row->consumer_secret,
-          'description' => $row->description,
           'operations' => array(
             'data' => array(
               '#type' => 'operations',
               '#links' => array(
-                'view' => array(
-                  'title' => t('View'),
-                  'href' => '',
-                ),
-                'edit' => array(
-                  'title' => t('Edit'),
-                  'href' => '',
-                ),
                 'delete' => array(
                   'title' => t('Delete'),
-                  'href' => '',
+                  'href' => 'oauth/consumer/delete/' . $row->cid,
                 ),
               ),
             ),

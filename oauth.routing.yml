@@ -13,8 +13,15 @@ oauth.user_consumer:
     _permission: 'access own consumers'
 
 oauth.user_consumer_add:
-  path: 'user/{user}/oauth/consumer/add'
+  path: 'oauth/consumer/add'
   defaults:
     _form: 'Drupal\oauth\Form\OAuthAddConsumerForm'
+  requirements:
+    _permission: 'access own consumers'
+
+oauth.user_consumer_delete:
+  path: 'oauth/consumer/delete/{cid}'
+  defaults:
+    _form: 'Drupal\oauth\Form\OAuthDeleteConsumerForm'
   requirements:
     _permission: 'access own consumers'

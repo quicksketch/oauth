@@ -47,12 +47,6 @@ function oauth_schema() {
         'unsigned'    => TRUE,
         'not null'    => TRUE,
       ),
-      'description' => array(
-        'description' => 'A description for this OAuth consumer.',
-        'type'        => 'varchar',
-        'length'      => 255,
-        'not null'    => TRUE,
-      ),
       'key_hash' => array(
         'description' => 'SHA1-hash of consumer_key.',
         'type'        => 'char',
