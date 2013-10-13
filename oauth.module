@@ -20,16 +20,8 @@ define('OAUTH_COMMON_LOGIN_PATH', 'user/login');
  */
 function oauth_permission() {
   $permissions = array(
-    'access own authorizations' => array(
-      'title' => t('Access own OAuth authorizations'),
-      'restrict access' => TRUE,
-    ),
     'access own consumers' => array(
       'title' => t('Access own OAuth consumers'),
-      'restrict access' => TRUE,
-    ),
-    'oauth authorize any consumers' => array(
-      'title' => t('Authorize any OAuth consumers'),
       'restrict access' => TRUE,
     ),
     'oauth register any consumers' => array(
@@ -45,17 +37,6 @@ function oauth_permission() {
       'restrict access' => TRUE,
     ),
   );
-
-  // Add seperate permissions for creating and
-  // authorizing consumers in each context.
-  foreach (oauth_context_list() as $name => $title) {
-    $permissions[sprintf('oauth register consumers in %s', $name)] = array(
-      'title' => t('Register OAuth consumers in %context', array('%context' => $title)),
-    );
-    $permissions[sprintf('oauth authorize consumers in %s', $name)] = array(
-      'title' => t('Authorize OAuth consumers in %context', array('%context' => $title)),
-    );
-  }
 
   return $permissions;
 }
