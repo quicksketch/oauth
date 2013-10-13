@@ -40,15 +40,15 @@ class OAuthDrupalProvider implements AuthenticationProviderInterface {
    * {@inheritdoc}
    */
   public function authenticate(Request $request) {
-    // Initialize and configure the OauthProvider too handle the request.
-    $this->provider = new OAuthProvider();
-    $this->provider->consumerHandler(array($this,'lookupConsumer'));
-    $this->provider->timestampNonceHandler(array($this,'timestampNonceChecker'));
-    $this->provider->tokenHandler(array($this,'tokenHandler'));
-    $this->provider->is2LeggedEndpoint(TRUE);
-
-    // Now check the request validity.
     try {
+      // Initialize and configure the OauthProvider too handle the request.
+      $this->provider = new OAuthProvider();
+      $this->provider->consumerHandler(array($this,'lookupConsumer'));
+      $this->provider->timestampNonceHandler(array($this,'timestampNonceChecker'));
+      $this->provider->tokenHandler(array($this,'tokenHandler'));
+      $this->provider->is2LeggedEndpoint(TRUE);
+
+      // Now check the request validity.
       $this->provider->checkOAuthRequest();
     } catch (OAuthException $e) {
       // The OAuth extension throws an alert when there is something wrong
