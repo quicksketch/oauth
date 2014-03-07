@@ -30,13 +30,13 @@ function _oauth_common_update_6200() {
 
   // Change all the oauth_common_token indexes and keys to take provider_token
   // into account.
-  db_drop_primary_key(&$ret, 'oauth_common_token');
-  db_drop_index(&$ret, 'oauth_common_token', 'token_key_type');
-  db_drop_index(&$ret, 'oauth_common_token', 'consumer_key');
+  db_drop_primary_key($ret, 'oauth_common_token');
+  db_drop_index($ret, 'oauth_common_token', 'token_key_type');
+  db_drop_index($ret, 'oauth_common_token', 'consumer_key');
 
-  db_add_primary_key(&$ret, 'oauth_common_token', array('token_key', 'provider_token'));
-  db_add_index(&$ret, 'oauth_common_token', 'token_key_type', array('token_key', 'provider_token', 'type'));
-  db_add_index(&$ret, 'oauth_common_token', 'consumer_key', array('consumer_key', 'provider_token'));
+  db_add_primary_key($ret, 'oauth_common_token', array('token_key', 'provider_token'));
+  db_add_index($ret, 'oauth_common_token', 'token_key_type', array('token_key', 'provider_token', 'type'));
+  db_add_index($ret, 'oauth_common_token', 'consumer_key', array('consumer_key', 'provider_token'));
 
   db_drop_table($ret, 'oauth_authorization_levels');
 
