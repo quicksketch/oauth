@@ -10,21 +10,21 @@ function _oauth_common_admin() {
   $form['oauth_common_enable_provider'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable the oauth provider'),
-    '#default_value' => variable_get('oauth_common_enable_provider', TRUE),
+    '#default_value' => config_get('oauth.settings', 'oauth_common_enable_provider'),
     '#description' => t('This option controls whether this site should act as a OAuth provider or not'),
   );
 
   $form['oauth_common_request_token_lifetime'] = array(
     '#type' => 'textfield',
     '#title' => t('Request token lifetime (in seconds)'),
-    '#default_value' => variable_get('oauth_common_request_token_lifetime', 7200),
+    '#default_value' => config_get('oauth.settings', 'oauth_common_request_token_lifetime'),
   );
 
   $form['oauth_common_login_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Login page'),
     '#description' => t('Specify an alternative login page. This is useful when, for example, you want to show a mobile-enhanced login page.'),
-    '#default_value' => variable_get('oauth_common_login_path', OAUTH_COMMON_LOGIN_PATH),
+    '#default_value' => config_get('oauth.settings', 'oauth_common_login_path'),
   );
 
   $form['#validate'][] = '_oauth_common_admin_settings_validate';
@@ -88,14 +88,14 @@ function oauth_common_list_context($js = NULL) {
       $operations[] = array(
         'title' => t('Disable'),
         'href'  => 'admin/config/services/oauth/' . $context->name . '/disable',
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
       );
     }
     else {
       $operations[] = array(
         'title' => t('Enable'),
         'href'  => 'admin/config/services/oauth/' . $context->name . '/enable',
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
       );
     }
 
@@ -136,9 +136,9 @@ function oauth_common_list_context($js = NULL) {
  */
 function oauth_common_add_context() {
   $context = oauth_common_context_new();
-  drupal_set_title(t('Add context'));
+  backdrop_set_title(t('Add context'));
   if (!$context) {
-    drupal_set_message(t("Can't create contexts, check that you've installed !ctools.", array(
+    backdrop_set_message(t("Can't create contexts, check that you've installed !ctools.", array(
       '!ctools' => l('Chaos tool suite', 'http://drupal.org/project/ctools'),
     )), 'error');
     $result = '';
@@ -159,9 +159,9 @@ function oauth_common_edit_context($context) {
     $context = oauth_common_context_load($context);
   }
   if ($context && !empty($context->title)) {
-    drupal_set_title($context->title);
+    backdrop_set_title($context->title);
   }
-  return drupal_get_form('oauth_common_edit_form_context', $context);
+  return backdrop_get_form('oauth_common_edit_form_context', $context);
 }
 
 /**
@@ -169,7 +169,7 @@ function oauth_common_edit_context($context) {
  */
 function oauth_common_edit_form_context($form, &$form_state, $context) {
   $form['#attached']['css'] = array(
-    drupal_get_path('module', 'oauth_common') . '/css/admin.css'
+    backdrop_get_path('module', 'oauth_common') . '/css/admin.css'
   );
 
   $form['cid'] = array(
@@ -517,11 +517,11 @@ function oauth_common_edit_form_context_submit($form, &$form_state) {
   oauth_common_context_save($context);
 
   if (empty($context->cid)) {
-    drupal_set_message(t('Your new context %title has been saved.', array('%title' => $context->title)));
+    backdrop_set_message(t('Your new context %title has been saved.', array('%title' => $context->title)));
     $form_state['values']['cid'] = $context->cid;
   }
   else {
-    drupal_set_message(t('Your changes have been saved.'));
+    backdrop_set_message(t('Your changes have been saved.'));
   }
 
   $form_state['redirect'] = 'admin/config/services/oauth';
@@ -543,7 +543,7 @@ function oauth_common_delete_confirm_context($form, &$form_state, $context) {
     $submit = t('Delete');
   }
   else {
-    drupal_not_found();
+    backdrop_not_found();
     die;
   }
   $form['context'] = array('#type' => 'value', '#value' => $context->name);
@@ -574,7 +574,7 @@ function oauth_common_export_context($form, &$form_state, $context) {
   if (!is_object($context)) {
     $context = oauth_common_context_load($context);
   }
-  drupal_set_title($context->title);
+  backdrop_set_title($context->title);
   $code = oauth_common_context_export($context);
 
   $lines = substr_count($code, "\n") + 4;

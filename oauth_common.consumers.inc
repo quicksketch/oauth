@@ -72,19 +72,19 @@ function oauth_common_page_user_consumers($account) {
  * Menu system callback for the add consumer page.
  */
 function oauth_common_add_consumer($account) {
-  $consumer = new DrupalOAuthConsumer(user_password(32), user_password(32), array(
+  $consumer = new BackdropOAuthConsumer(user_password(32), user_password(32), array(
     'callback_url' => '',
     'uid' => $account->uid,
     'provider_consumer' => TRUE,
   ));
-  return drupal_get_form('oauth_common_form_consumer', $consumer);
+  return backdrop_get_form('oauth_common_form_consumer', $consumer);
 }
 
 /**
  * Menu system callback for the edit consumer page.
  */
 function oauth_common_edit_consumer($consumer) {
-  return drupal_get_form('oauth_common_form_consumer', $consumer);
+  return backdrop_get_form('oauth_common_form_consumer', $consumer);
 }
 
 /**
@@ -222,13 +222,13 @@ function oauth_common_form_consumer_submit($form, &$form_state) {
   $consumer->write();
 
   if ($update) {
-    drupal_set_message(t('Updated the consumer @name', array('@name' => $values['name'])));
+    backdrop_set_message(t('Updated the consumer @name', array('@name' => $values['name'])));
   }
   else {
-    drupal_set_message(t('Added the consumer @name', array('@name' => $values['name'])));
+    backdrop_set_message(t('Added the consumer @name', array('@name' => $values['name'])));
   }
 
-  drupal_goto(sprintf('user/%d/oauth/consumers', $consumer->uid));
+  backdrop_goto(sprintf('user/%d/oauth/consumers', $consumer->uid));
 }
 
 /**
@@ -264,7 +264,7 @@ function oauth_common_form_consumer_delete_submit($form, &$form_state) {
   $consumer = $form_state['values']['consumer_object'];
 
   $consumer->delete();
-  drupal_set_message(t('Deleted the consumer @name', array('@name' => $consumer->name)));
+  backdrop_set_message(t('Deleted the consumer @name', array('@name' => $consumer->name)));
 
-  drupal_goto(sprintf('user/%d/oauth/consumers', $consumer->uid));
+  backdrop_goto(sprintf('user/%d/oauth/consumers', $consumer->uid));
 }

@@ -77,21 +77,21 @@ function oauth_common_page_user_authorizations($account) {
  * @param object $account
  *   A user account object.
  * @param object $consumer
- *   A DrupalOAuthConsumer instance.
+ *   A BackdropOAuthConsumer instance.
  */
 function oauth_common_authorization_add($account, $consumer) {
-  $token = new DrupalOAuthToken(user_password(32), user_password(32), $consumer, array(
+  $token = new BackdropOAuthToken(user_password(32), user_password(32), $consumer, array(
     'uid' => $account->uid,
   ));
-  return drupal_get_form('oauth_common_form_authorization', $token);
+  return backdrop_get_form('oauth_common_form_authorization', $token);
 }
 
 /**
  * Provide a form to edit and add authorizations. 
  *
  * Despite what appears above, this function is actually invoked by 
- * `drupal_retrieve_form` (by way of `drupal_build_form`, by way of 
- * `drupal_get_form`), so the second argument isn't the token, but a reference 
+ * `backdrop_retrieve_form` (by way of `backdrop_build_form`, by way of 
+ * `backdrop_get_form`), so the second argument isn't the token, but a reference 
  * to the form state. Luckily, PHP made that incredibly non-obvious by 
  * neglecting to notify me that this function was being called with one too few 
  * arguments. Go team.
@@ -102,7 +102,7 @@ function oauth_common_form_authorization($form_id, &$form_state, $token) {
   $consumer = $token->consumer;
   $context = oauth_common_context_load($consumer->context);
 
-  drupal_set_title(t('Authorization for @app', array('@app' => $consumer->name)), PASS_THROUGH);
+  backdrop_set_title(t('Authorization for @app', array('@app' => $consumer->name)), PASS_THROUGH);
 
   $form['token_object'] = array(
     '#type' => 'value',
@@ -220,11 +220,11 @@ function oauth_common_form_authorization_submit($form, &$form_state) {
   $token->authorized = $values['authorized'];
   $token->write(TRUE);
 
-  drupal_set_message(t('The @consumer token @token was updated.', array(
+  backdrop_set_message(t('The @consumer token @token was updated.', array(
     '@consumer' => $consumer->name,
     '@token' => $token->key)));
 
-  drupal_goto(sprintf('user/%d/applications', $token->uid));
+  backdrop_goto(sprintf('user/%d/applications', $token->uid));
 }
 
 /**
@@ -232,7 +232,7 @@ function oauth_common_form_authorization_submit($form, &$form_state) {
  *
  * We've got the same symptom here that we do with 
  * `oauth_common_form_authorization`, i.e., this is actually called by 
- * `drupal_retrieve_form`.
+ * `backdrop_retrieve_form`.
  */
 function oauth_common_form_authorization_delete($form_id, &$form_state, $user, $token) {
   $consumer = $token->consumer;
@@ -243,7 +243,7 @@ function oauth_common_form_authorization_delete($form_id, &$form_state, $user, $
     $cancel_url = $_GET['destination'];
   }
 
-  drupal_set_title(t('Deleting authorization for "@consumer"', array(
+  backdrop_set_title(t('Deleting authorization for "@consumer"', array(
     '@consumer' => $consumer->name,
   )), PASS_THROUGH);
 
@@ -290,7 +290,7 @@ function oauth_common_form_authorization_delete_submit($form, &$form_state) {
   $token = $values['token_object'];
   $consumer = $token->consumer;
   $token->delete();
-  drupal_set_message(t('The @consumer token @token was deleted.', array(
+  backdrop_set_message(t('The @consumer token @token was deleted.', array(
     '@consumer' => $consumer->name,
     '@token' => $token->key)));
 }
