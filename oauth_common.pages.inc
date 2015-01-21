@@ -136,7 +136,7 @@ function oauth_common_form_authorize() {
     $tvars = array(
       '@user' => $user->name,
       '@appname' => $consumer->name,
-      '@sitename' => variable_get('site_name', ''),
+      '@sitename' => config_get('system.core', 'site_name'),
     );
 
     $title = !empty($context->title) ? $context->title : 'Authorize @appname';

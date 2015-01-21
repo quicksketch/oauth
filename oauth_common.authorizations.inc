@@ -191,7 +191,7 @@ function oauth_common_permissions_form($account, &$form, $consumer, $context, $d
   $tvars = array(
     '@appname' => $consumer->name,
     '@user' => $account->name,
-    '@sitename' => variable_get('site_name', ''),
+    '@sitename' => config_get('system.core', 'site_name'),
   );
 
   if ($context) {
