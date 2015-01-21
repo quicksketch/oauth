@@ -6,7 +6,7 @@ package = "OAuth"
 recommends[] = ctools
 suggests[] = inputstream
 
-core = 7.x
+backdrop = 1.x
 
 files[] = lib/OAuth.php
 files[] = includes/DrupalOAuthServer.inc
