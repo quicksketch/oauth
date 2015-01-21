@@ -3,7 +3,7 @@
 /**
  * Database abstraction class
  */
-class DrupalOAuthDataStore extends OAuthDataStore {
+class BackdropOAuthDataStore extends OAuthDataStore {
   private $context;
 
   public function __construct($context) {
@@ -23,7 +23,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
    *  An exception is thrown when the consumer cannot be found
    */
   public function lookup_consumer($consumer_key, $provider_consumer = TRUE) {
-    $consumer = DrupalOAuthConsumer::loadProviderByKey($consumer_key);
+    $consumer = BackdropOAuthConsumer::loadProviderByKey($consumer_key);
     if (!$consumer) {
       throw new OAuthException('Consumer not found');
     }
@@ -39,14 +39,14 @@ class DrupalOAuthDataStore extends OAuthDataStore {
    *  The type of the token: 'request' or 'access'.
    * @param string $token
    *  The token key.
-   * @return DrupalOauthToken
+   * @return BackdropOauthToken
    *  The matching token
    * @throws OAuthException
    *  An exception is thrown when the token cannot be found or doesn't match
    */
   public function lookup_token($consumer, $token_type, $token) {
     $type = ($token_type == 'request' ? OAUTH_COMMON_TOKEN_TYPE_REQUEST : OAUTH_COMMON_TOKEN_TYPE_ACCESS);
-    $token = DrupalOAuthToken::loadByKey($token, $consumer, $type);
+    $token = BackdropOAuthToken::loadByKey($token, $consumer, $type);
     if (!$token) {
       throw new OAuthException('Token not found');
     }
@@ -88,7 +88,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
         'timestamp' => $timestamp,
         'token_key' => $token ? $token->key : '',
       );
-      drupal_write_record('oauth_common_nonce', $values);
+      backdrop_write_record('oauth_common_nonce', $values);
       return NULL;
     }
 
@@ -100,14 +100,14 @@ class DrupalOAuthDataStore extends OAuthDataStore {
    *
    * @param OAuthConsumer $consumer
    *  The consumer to generate a token for.
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    *  The request token
    */
   function new_request_token($consumer, $callback = NULL) {
-    $token = new DrupalOAuthToken(user_password(32), user_password(32), $consumer, array(
+    $token = new BackdropOAuthToken(user_password(32), user_password(32), $consumer, array(
       'type'    => OAUTH_COMMON_TOKEN_TYPE_REQUEST,
       'uid'     => 0,
-      'expires' => REQUEST_TIME + variable_get('oauth_common_request_token_lifetime', 7200),
+      'expires' => REQUEST_TIME + config_get('oauth.settings', 'oauth_common_request_token_lifetime'),
     ));
     $token->write();
     return $token;
@@ -116,7 +116,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
   /**
    * Generate a new access token and delete the old request token.
    *
-   * @param DrupalOAuthToken $token_old
+   * @param BackdropOAuthToken $token_old
    *   The old request token.
    * @param OAuthConsumer $consumer
    *   The service consumer information.
@@ -125,7 +125,7 @@ class DrupalOAuthDataStore extends OAuthDataStore {
     module_load_include('inc', 'oauth_common');
 
     if ($token_old && $token_old->authorized) {
-      $token_new = new DrupalOAuthToken(user_password(32), user_password(32), $consumer, array(
+      $token_new = new BackdropOAuthToken(user_password(32), user_password(32), $consumer, array(
         'type'       => OAUTH_COMMON_TOKEN_TYPE_ACCESS,
         'uid'        => $token_old->uid,
         'services'   => isset($token_old->services) ? $token_old->services : NULL,

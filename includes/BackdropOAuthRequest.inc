@@ -1,6 +1,6 @@
 <?php
 
-class DrupalOAuthRequest extends OAuthRequest {
+class BackdropOAuthRequest extends OAuthRequest {
   /**
    * Creates a OAuthRequest object from the current request
    *
@@ -20,7 +20,7 @@ class DrupalOAuthRequest extends OAuthRequest {
       if (isset($_SERVER['REDIRECT_URL'])) {
         $q = FALSE;
       }
-      // Check that the q parameter hasn't been created or altered by drupal
+      // Check that the q parameter hasn't been created or altered by backdrop
       elseif (isset($_GET['q'])) {
         $get = array();
         parse_str($_SERVER['QUERY_STRING'], $get);
@@ -28,7 +28,7 @@ class DrupalOAuthRequest extends OAuthRequest {
         if (isset($get['q'])) {
           $q = $get['q'];
         }
-        // The q parameter was set by drupal, unset it
+        // The q parameter was set by backdrop, unset it
         else {
           $q = FALSE;
         }

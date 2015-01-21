@@ -1,6 +1,6 @@
 <?php
 
-class DrupalOAuthConsumer extends OAuthConsumer {
+class BackdropOAuthConsumer extends OAuthConsumer {
   public $csid = 0;
 
   public $uid = 0;
@@ -70,7 +70,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
         $values['created'] = $this->created;
       }
 
-      $ready = drupal_write_record('oauth_common_provider_consumer', $values, $primary);
+      $ready = backdrop_write_record('oauth_common_provider_consumer', $values, $primary);
 
       if (!$ready) {
         throw new OAuthException("Couldn't save consumer");
@@ -88,7 +88,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
       $values['csid'] = $this->csid;
     }
 
-    drupal_write_record('oauth_common_consumer', $values, $primary);
+    backdrop_write_record('oauth_common_consumer', $values, $primary);
 
     $this->csid = $values['csid'];
     $this->in_database = TRUE;
@@ -98,7 +98,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
         'csid' => $this->csid,
         'consumer_key' => $this->key,
       );
-      drupal_write_record('oauth_common_provider_consumer', $values, array('consumer_key'));
+      backdrop_write_record('oauth_common_provider_consumer', $values, array('consumer_key'));
     }
   }
 
@@ -141,11 +141,11 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    * @param bool $provider_consumer
    *  Optional. Whether the consumer we're about to load is a provider or
    *  consumer consumer. Defaults to TRUE.
-   * @return DrupalOAuthConsumer
+   * @return BackdropOAuthConsumer
    *  The loaded consumer object or FALSE if load failed
    */
   public static function load($key, $provider_consumer = TRUE) {
-    return DrupalOAuthConsumer::loadProviderByKey($key, $provider_consumer);
+    return BackdropOAuthConsumer::loadProviderByKey($key, $provider_consumer);
   }
 
   /**
@@ -155,7 +155,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    *  The id of the consumer to get
    * @param boolean $load_provider_data
    *  Whether to load provider related data or not
-   * @return DrupalOAuthConsumer
+   * @return BackdropOAuthConsumer
    *  The loaded consumer object or FALSE if load failed
    */
   public static function loadById($csid, $load_provider_data = TRUE) {
@@ -185,7 +185,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    *  The key of the consumer to get
    * @param boolean $provider
    *  Used internally for backwards compatibility with ::load()
-   * @return DrupalOAuthConsumer
+   * @return BackdropOAuthConsumer
    *  The loaded consumer object or FALSE if load failed
    */
   public static function loadProviderByKey($key, $provider = TRUE) {
@@ -200,7 +200,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
       $query->fields('pc');
     }
     else {
-      // For backwards compatibility with deprecated DrupalOAuthConsumer::load() from 6.x-3.0-beta3
+      // For backwards compatibility with deprecated BackdropOAuthConsumer::load() from 6.x-3.0-beta3
       $query->leftJoin('oauth_common_provider_consumer', 'pc', 'pc.csid = c.csid');
       $query
         ->fields('c', array('csid', 'consumer_key'))
@@ -216,7 +216,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
    *
    * @param resource $res
    *  A database result resource
-   * @return DrupalOAuthConsumer
+   * @return BackdropOAuthConsumer
    *  The constructed consumer object or NULL if no rows could be read or construction failed
    */
   public static function fromResult($res) {
@@ -226,7 +226,7 @@ class DrupalOAuthConsumer extends OAuthConsumer {
         $data['configuration'] = unserialize($data['configuration']);
       }
       $data['in_database'] = TRUE;
-      return new DrupalOAuthConsumer($data['consumer_key'], $data['secret'], $data);
+      return new BackdropOAuthConsumer($data['consumer_key'], $data['secret'], $data);
     }
     return NULL;
   }

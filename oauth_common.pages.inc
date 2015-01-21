@@ -26,8 +26,8 @@ function _oauth_common_validate_request_callback($type, $unsigned = NULL) {
     }
   }
   catch (OAuthException $e) {
-    drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
-    drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
+    backdrop_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
+    backdrop_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
   exit;
 }
@@ -41,17 +41,17 @@ function oauth_common_page_authorized($csid = NULL) {
   // If we have an oauth_token we're acting as a consumer and just got authorized
   if (!empty($_GET['oauth_token'])) {
     //TODO: Add documentation on how to use the callback url with
-    $consumer = $csid ? DrupalOAuthConsumer::loadById($csid, FALSE) : FALSE;
+    $consumer = $csid ? BackdropOAuthConsumer::loadById($csid, FALSE) : FALSE;
     if ($consumer) {
-      $request_token = DrupalOAuthToken::loadByKey($_GET['oauth_token'], $consumer, OAUTH_COMMON_TOKEN_TYPE_REQUEST);
+      $request_token = BackdropOAuthToken::loadByKey($_GET['oauth_token'], $consumer, OAUTH_COMMON_TOKEN_TYPE_REQUEST);
     }
     else {
       // Backwards compatibility with 6.x-3.0-beta3
-      $request_token = DrupalOAuthToken::load($_GET['oauth_token'], FALSE);
+      $request_token = BackdropOAuthToken::load($_GET['oauth_token'], FALSE);
       $consumer = $request_token ? $request_token->consumer : FALSE;
     }
     if (!empty($request_token)) {
-      $client = new DrupalOAuthClient($consumer, $request_token);
+      $client = new BackdropOAuthClient($consumer, $request_token);
 
       $verifier = isset($_GET['oauth_verifier']) ? $_GET['oauth_verifier'] : NULL;
 
@@ -74,22 +74,22 @@ function oauth_common_page_authorized($csid = NULL) {
  */
 function oauth_common_form_authorize() {
   module_load_include('inc', 'oauth_common');
-  $req = DrupalOAuthRequest::from_request();
+  $req = BackdropOAuthRequest::from_request();
   $context = oauth_common_context_from_request($req);
   $auth_ops = $context->authorization_options;
 
   if (!$context) {
-    drupal_set_message(t("Can't find OAuth context, check the site's settings."), 'error');
+    backdrop_set_message(t("Can't find OAuth context, check the site's settings."), 'error');
     return;
   }
 
   $token = $req->get_parameter('oauth_token');
   $callback = $req->get_parameter('oauth_callback');
-  $token = DrupalOAuthToken::loadByKey($token, FALSE, OAUTH_COMMON_TOKEN_TYPE_REQUEST);
+  $token = BackdropOAuthToken::loadByKey($token, FALSE, OAUTH_COMMON_TOKEN_TYPE_REQUEST);
 
   // Check that we have a valid token
   if (!$token) {
-    drupal_set_message(t('Please include a valid OAuth token in your request.'), 'error');
+    backdrop_set_message(t('Please include a valid OAuth token in your request.'), 'error');
     return;
   }
 
@@ -101,13 +101,13 @@ function oauth_common_form_authorize() {
     // There's some strange bug in the ?destination=... handling
     // This is not exactly beautiful, but it gets the work done
     // TODO: Find out why!
-    if (drupal_substr($_SERVER['REQUEST_URI'], 0, 2) == '//') {
-      header('Location: ' . drupal_substr($_SERVER['REQUEST_URI'], 1), TRUE, 302);
+    if (backdrop_substr($_SERVER['REQUEST_URI'], 0, 2) == '//') {
+      header('Location: ' . backdrop_substr($_SERVER['REQUEST_URI'], 1), TRUE, 302);
     }
 
     if (!(user_access('oauth authorize any consumers') || user_access('oauth authorize consumers in ' . $consumer->context))) {
-      drupal_set_message(t('You are not authorized to allow external services access to this system.'), 'error');
-      return drupal_access_denied();
+      backdrop_set_message(t('You are not authorized to allow external services access to this system.'), 'error');
+      return backdrop_access_denied();
     }
 
     if (!empty($auth_ops['automatic_authorization'])
@@ -140,7 +140,7 @@ function oauth_common_form_authorize() {
     );
 
     $title = !empty($context->title) ? $context->title : 'Authorize @appname';
-    drupal_set_title(t($title, $tvars), PASS_THROUGH);
+    backdrop_set_title(t($title, $tvars), PASS_THROUGH);
 
     $form = array();
 
@@ -230,8 +230,8 @@ function oauth_common_form_authorize() {
     unset($query['q']); // why are there so few q's?
     // Allow this path to be set to something other than the standard
     // login page in case the site has a mobile-enhanced login page.
-    $path = variable_get('oauth_common_login_path', OAUTH_COMMON_LOGIN_PATH);
-    drupal_goto($path, array('query' => array(
+    $path = config_get('oauth.settings', 'oauth_common_login_path');
+    backdrop_goto($path, array('query' => array(
       'destination' => url('oauth/authorize', array(
         'query' => $query,
       )),
@@ -285,7 +285,7 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
   $context = oauth_common_context_load($consumer->context);
 
   if (!$context) {
-    drupal_set_message(t("Can't find OAuth context, check the site's settings."), 'error');
+    backdrop_set_message(t("Can't find OAuth context, check the site's settings."), 'error');
     return;
   }
 
@@ -317,7 +317,7 @@ function oauth_common_form_authorize_submit(&$form, &$form_state) {
     exit;
   }
   else {
-    drupal_goto('oauth/authorized');
+    backdrop_goto('oauth/authorized');
   }
 }
 
@@ -346,17 +346,17 @@ function _oauth_common_glue_url($parsed) {
  */
 function oauth_common_callback_request_token() {
   try {
-    $req = DrupalOAuthRequest::from_request();
+    $req = BackdropOAuthRequest::from_request();
     $context = oauth_common_context_from_request($req);
     if (!$context) {
       throw new OAuthException('No OAuth context found');
     }
-    $server = new DrupalOAuthServer($context);
+    $server = new BackdropOAuthServer($context);
     print $server->fetch_request_token($req);
   }
   catch (OAuthException $e) {
-    drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
-    drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
+    backdrop_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
+    backdrop_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
 }
 
@@ -365,12 +365,12 @@ function oauth_common_callback_request_token() {
  */
 function oauth_common_callback_access_token() {
   try {
-    $req = DrupalOAuthRequest::from_request();
+    $req = BackdropOAuthRequest::from_request();
     $context = oauth_common_context_from_request($req);
     if (!$context) {
       throw new OAuthException('No OAuth context found');
     }
-    $server = new DrupalOAuthServer($context);
+    $server = new BackdropOAuthServer($context);
     $access_token = $server->fetch_access_token($req);
 
     // Set the expiry time based on context settings or get parameter
@@ -393,7 +393,7 @@ function oauth_common_callback_access_token() {
     print $access_token;
   }
   catch (OAuthException $e) {
-    drupal_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
-    drupal_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
+    backdrop_add_http_header('Status', '401 Unauthorized: ' . $e->getMessage());
+    backdrop_add_http_header('WWW-Authenticate', sprintf('OAuth realm="%s"', url('', array('absolute' => TRUE))));
   }
 }

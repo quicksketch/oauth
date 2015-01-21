@@ -60,6 +60,18 @@ function oauth_common_permission() {
 }
 
 /**
+ * Implements hook_oath_common_info().
+ */
+function oath_common_config_info() {
+  $prefixes['oauth_common.settings'] = array(
+    'label' => t('OAuth settings'),
+    'group' => t('OAuth'),
+  );
+  return $prefixes;
+}
+
+
+/**
  * Implements hook_menu().
  */
 function oauth_common_menu() {

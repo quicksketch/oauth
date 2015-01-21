@@ -1,8 +1,8 @@
 <?php
 
-class DrupalOAuthServer extends OAuthServer {
+class BackdropOAuthServer extends OAuthServer {
   public function __construct($context) {
-    parent::__construct(new DrupalOAuthDataStore($context));
+    parent::__construct(new BackdropOAuthDataStore($context));
 
     if (isset($context->authorization_options['signature_methods'])) {
       $sig_methods = $context->authorization_options['signature_methods'];

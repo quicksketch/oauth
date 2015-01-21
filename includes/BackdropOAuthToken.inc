@@ -1,6 +1,6 @@
 <?php
 
-class DrupalOAuthToken extends OAuthToken {
+class BackdropOAuthToken extends OAuthToken {
   public $tid = 0;
   public $expires = 0;
   public $type = OAUTH_COMMON_TOKEN_TYPE_REQUEST;
@@ -26,7 +26,7 @@ class DrupalOAuthToken extends OAuthToken {
         $params = $consumer;
       }
       if (!empty($params['csid'])) {
-        $consumer = DrupalOAuthConsumer::loadById($params['csid'], isset($params['services']));
+        $consumer = BackdropOAuthConsumer::loadById($params['csid'], isset($params['services']));
       }
     }
 
@@ -68,7 +68,7 @@ class DrupalOAuthToken extends OAuthToken {
         $values['created'] = $this->created;
       }
 
-      $ready = drupal_write_record('oauth_common_provider_token', $values, $primary);
+      $ready = backdrop_write_record('oauth_common_provider_token', $values, $primary);
 
       if (!$ready) {
         throw new OAuthException("Couldn't save token");
@@ -89,7 +89,7 @@ class DrupalOAuthToken extends OAuthToken {
       $values['tid'] = $this->tid;
     }
 
-    drupal_write_record('oauth_common_token', $values, $primary);
+    backdrop_write_record('oauth_common_token', $values, $primary);
 
     $this->tid = $values['tid'];
     $this->in_database = TRUE;
@@ -99,7 +99,7 @@ class DrupalOAuthToken extends OAuthToken {
         'tid'       => $this->tid,
         'token_key' => $this->key,
       );
-      drupal_write_record('oauth_common_provider_token', $values, array('token_key'));
+      backdrop_write_record('oauth_common_provider_token', $values, array('token_key'));
     }
   }
 
@@ -141,11 +141,11 @@ class DrupalOAuthToken extends OAuthToken {
    * The key of the token to get
    * @param bool $provider_token
    * Whether the token to load is a provider token.
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    * The loaded token object or FALSE if load failed
    */
   public static function load($key, $provider_token = TRUE) {
-    return DrupalOAuthToken::loadByKey($key, !$provider_token, FALSE);
+    return BackdropOAuthToken::loadByKey($key, !$provider_token, FALSE);
   }
 
   /**
@@ -157,7 +157,7 @@ class DrupalOAuthToken extends OAuthToken {
    *  The consumer for which to fetch a token or FALSE to fetch a provider token
    * @param int $type
    *  Used internally for backwards compatibility with ::load()
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    *  The loaded token object or FALSE if load failed
    */
   public static function loadByKey($key, $consumer = FALSE, $type = OAUTH_COMMON_TOKEN_TYPE_ACCESS) {
@@ -167,7 +167,7 @@ class DrupalOAuthToken extends OAuthToken {
       ->condition('t.key_hash', sha1($key))
       ->fields('t');
 
-    // Only add if defined - needed for backwards compatibility with deprecated DrupalOAuthToken::load() from 6.x-3.0-beta3
+    // Only add if defined - needed for backwards compatibility with deprecated BackdropOAuthToken::load() from 6.x-3.0-beta3
     if ($type !== FALSE) {
       $query->condition('t.type', $type);
     }
@@ -177,7 +177,7 @@ class DrupalOAuthToken extends OAuthToken {
       $query->fields('pt', array('created', 'changed', 'services', 'authorized'));
     }
 
-    // Only fetch non-provider tokens - needed for backwards compatibility with deprecated DrupalOAuthToken::load() from 6.x-3.0-beta3
+    // Only fetch non-provider tokens - needed for backwards compatibility with deprecated BackdropOAuthToken::load() from 6.x-3.0-beta3
     if ($consumer === TRUE) {
       $query->leftJoin('oauth_common_provider_token', 'pt', 'pt.tid = t.tid');
       $query->isNull('pt.tid');
@@ -196,7 +196,7 @@ class DrupalOAuthToken extends OAuthToken {
    *  The id of the token to get
    * @param boolean $load_provider_data
    *  Whether to load provider related data or not
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    *  The loaded token object or FALSE if load failed
    */
   public static function loadById($tid, $load_provider_data = TRUE) {
@@ -224,7 +224,7 @@ class DrupalOAuthToken extends OAuthToken {
    *
    * @param resource $res
    *  A database result resource
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    *  The constructed token object or NULL if no rows could be read or construction failed
    */
   public static function fromResult($res, $consumer = FALSE) {
@@ -239,10 +239,10 @@ class DrupalOAuthToken extends OAuthToken {
         $token_consumer = $consumer;
       }
       else {
-        $token_consumer = DrupalOAuthConsumer::loadById($data['csid'], isset($data['services']));
+        $token_consumer = BackdropOAuthConsumer::loadById($data['csid'], isset($data['services']));
       }
 
-      return new DrupalOAuthToken($data['token_key'], $data['secret'], $token_consumer, $data);
+      return new BackdropOAuthToken($data['token_key'], $data['secret'], $token_consumer, $data);
     }
     return NULL;
   }

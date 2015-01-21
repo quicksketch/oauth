@@ -1,6 +1,6 @@
 <?php
 
-class DrupalOAuthClient {
+class BackdropOAuthClient {
   public $version = OAUTH_COMMON_VERSION_1_RFC;
 
   protected $consumer;
@@ -9,9 +9,9 @@ class DrupalOAuthClient {
   protected $signatureMethod;
 
   /**
-   * Creates an instance of the DrupalOAuthClient.
+   * Creates an instance of the BackdropOAuthClient.
    *
-   * @param DrupalOAuthConsumer $consumer
+   * @param BackdropOAuthConsumer $consumer
    *  The consumer.
    * @param OAuthToken $request_token
    *  Optional. A request token to use.
@@ -56,7 +56,7 @@ class DrupalOAuthClient {
   public static function signatureMethod($method = 'SHA1', $fallback_to_sha1 = TRUE) {
     $sign = NULL;
 
-    if (in_array(drupal_strtolower($method), hash_algos())) {
+    if (in_array(backdrop_strtolower($method), hash_algos())) {
       $sign = new OAuthSignatureMethod_HMAC($method);
     }
     else if ($fallback_to_sha1) {
@@ -89,7 +89,7 @@ class DrupalOAuthClient {
    *       A full URL of where the user should be sent after the request token
    *       has been authorized.
    *       Only used by versions higher than OAUTH_COMMON_VERSION_1.
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    *  The returned request token.
    */
   public function getRequestToken($endpoint = NULL, $options = array()) {
@@ -133,7 +133,7 @@ class DrupalOAuthClient {
       $this->version = OAUTH_COMMON_VERSION_1;
     }
 
-    $this->requestToken = new DrupalOAuthToken($params['oauth_token'], $params['oauth_token_secret'], $this->consumer, array(
+    $this->requestToken = new BackdropOAuthToken($params['oauth_token'], $params['oauth_token_secret'], $this->consumer, array(
       'type'    => OAUTH_COMMON_TOKEN_TYPE_REQUEST,
       'version' => $this->version,
     ));
@@ -210,7 +210,7 @@ class DrupalOAuthClient {
    *     - 'verifier'
    *       A string containing a verifier for he user from the provider.
    *       Only used by versions higher than OAUTH_COMMON_VERSION_1.
-   * @return DrupalOAuthToken
+   * @return BackdropOAuthToken
    *  The access token.
    */
   public function getAccessToken($endpoint = NULL, $options = array()) {
@@ -253,10 +253,10 @@ class DrupalOAuthClient {
 
     // Check if we've has recieved this token previously and if so use the old one
     //TODO: Is this safe!? What if eg. multiple users are getting the same access token from the provider?
-    $this->accessToken = DrupalOAuthToken::loadByKey($params['oauth_token'], $this->consumer);
+    $this->accessToken = BackdropOAuthToken::loadByKey($params['oauth_token'], $this->consumer);
     //TODO: Can a secret change even though the token doesn't? If so it needs to be changed.
     if (!$this->accessToken) {
-      $this->accessToken = new DrupalOAuthToken($params['oauth_token'], $params['oauth_token_secret'], $this->consumer, array(
+      $this->accessToken = new BackdropOAuthToken($params['oauth_token'], $params['oauth_token_secret'], $this->consumer, array(
         'type' => OAUTH_COMMON_TOKEN_TYPE_ACCESS,
       ));
     }
@@ -329,7 +329,7 @@ class DrupalOAuthClient {
       curl_setopt($ch, CURLOPT_POSTFIELDS, '');
     }
     $oauth_version = _oauth_common_version();
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Drupal/' . VERSION . ' OAuth/' . $oauth_version);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Backdrop/' . VERSION . ' OAuth/' . $oauth_version);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_HEADER, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
