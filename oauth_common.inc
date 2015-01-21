@@ -18,7 +18,7 @@ function oauth_common_user_consumers($uid) {
     WHERE pc.uid = :uid', array(':uid' => $uid));
 
   $consumers = array();
-  while ($consumer = DrupalOAuthConsumer::fromResult($result)) {
+  while ($consumer = BackdropOAuthConsumer::fromResult($result)) {
     $consumers[] = $consumer;
   }
 
@@ -39,7 +39,7 @@ function oauth_common_user_access_tokens($uid) {
     ':type' => OAUTH_COMMON_TOKEN_TYPE_ACCESS,
   ));
   $tokens = array();
-  while ($token = DrupalOAuthToken::fromResult($result)) {
+  while ($token = BackdropOAuthToken::fromResult($result)) {
     $tokens[] = $token;
   }
   return $tokens;
@@ -53,11 +53,11 @@ function oauth_common_user_access_tokens($uid) {
  *  signed, otherwise FALSE. Then comes the validated consumer and token objects.
  */
 function oauth_common_verify_request() {
-  $req = DrupalOAuthRequest::from_request();
+  $req = BackdropOAuthRequest::from_request();
   // Verify
   $consumer_key = $req->get_parameter('oauth_consumer_key');
   if (!empty($consumer_key)) {
-    $consumer = DrupalOAuthConsumer::loadProviderByKey($consumer_key);
+    $consumer = BackdropOAuthConsumer::loadProviderByKey($consumer_key);
     if ($consumer) {
       $context = oauth_common_context_load($consumer->context);
 
@@ -70,12 +70,12 @@ function oauth_common_verify_request() {
       // Only verify request if we got a signature
       $signature = $req->get_parameter('oauth_signature');
       if (!empty($signature)) {
-        $server = new DrupalOAuthServer($context);
+        $server = new BackdropOAuthServer($context);
         return array_merge(array(TRUE), $server->verify_request($req));
       }
       else {
         $token_key = $req->get_parameter('oauth_token');
-        if (empty($token_key) || !($token = DrupalOAuthToken::loadbyKey($token_key, $consumer))) {
+        if (empty($token_key) || !($token = BackdropOAuthToken::loadbyKey($token_key, $consumer))) {
           $token = NULL;
         }
         return array(FALSE, $consumer, $token);
@@ -89,7 +89,7 @@ function _oauth_common_verify_body_hash($req) {
   $body_hash = $req->get_parameter('oauth_body_hash');
   if ($body_hash && module_exists('inputstream')) {
     $hres = hash_init('sha1');
-    $stream = fopen('drupal://input', 'r');
+    $stream = fopen('backdrop://input', 'r');
     hash_update_stream($hres, $stream);
     fclose($stream);
     $sha1 = hash_final($hres, TRUE);
