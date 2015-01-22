@@ -29,12 +29,31 @@ function _oauth_common_admin() {
 
   $form['#validate'][] = '_oauth_common_admin_settings_validate';
 
-  return system_settings_form($form);
+ // return system_settings_form($form);
+  
+    // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  // Return the form!
+  return $form;
+}
+
+// Add a submit function to process config
+function my_settings_form_submit($form, &$form_state) {
+  $config = config('oauth_common.settings');
+  $config->set('oauth_common_enable_provider', $form_state['values']['oauth_common_enable_provider']);
+  $config->set('oauth_common_request_token_lifetime', $form_state['values']['oauth_common_request_token_lifetime']);
+  $config->set('oauth_common_login_path', $form_state['values']['oauth_common_login_path']);
+  $config->save();
+  backdrop_set_message(t('The configuration options have been saved.'));
 }
 
 function _oauth_common_admin_settings_validate($form, $form_state) {
   $values = $form_state['values'];
-
   $lifetime = intval($values['oauth_common_request_token_lifetime'], 10);
   if (!$lifetime) {
     form_set_error('oauth_common_request_token_lifetime', t('The request token lifetime must be a non-zero integer value.'));
