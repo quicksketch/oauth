@@ -26,6 +26,8 @@ This project is GPL v2 software. See the LICENSE.txt file in this directory for 
 Current Maintainers
 
 For Drupal:
+Juan Pablo Novillo Requena (juampy)
+
 
 Port to Backdrop:
 Graham Oliver github.com/Graham-72
