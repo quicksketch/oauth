@@ -3,6 +3,10 @@ OAuth
 OAuth implements the OAuth classes for use with Drupal and acts as a support
 module for other modules that wish to use OAuth.
 
+This module includes a slightly modified version of this 
+<a rel="nofollow" href="http://oauth.googlecode.com/svn/code/php">
+OAuth Client/Server library</a>
+
 OAuth Client flow:
 
 The callback to be used is /oauth/authorized/% where % is the id of the consumer
@@ -27,6 +31,11 @@ Current Maintainers
 
 For Drupal:
 Juan Pablo Novillo Requena (juampy)
+Kyle Browning (kylebrowning)
+jobeirne
+Pelle Wessman (voxpelli)
+Hugo Wetterberg
+
 
 
 Port to Backdrop:
@@ -34,6 +43,7 @@ Graham Oliver github.com/Graham-72
 
 
 Credits
+The Drupal module has been sponsored by Good Old, Mindpark and Lullabot.
 
 
 
