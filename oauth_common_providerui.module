@@ -2,6 +2,17 @@
 /**
  * OAuth Common Provider UI module
  */
+ 
+/**
+ * Implements hook_config_info().
+ */
+function oath_common_providerui_config_info() {
+  $prefixes['oauth_common_providerui.settings'] = array(
+    'label' => t('OAuth Provider'),
+    'group' => t('OAuth'),
+  );
+  return $prefixes;
+}
 
 /**
  * Implements hook_menu().
