@@ -9,10 +9,10 @@ suggests[] = inputstream
 backdrop = 1.x
 
 files[] = lib/OAuth.php
-files[] = includes/DrupalOAuthServer.inc
-files[] = includes/DrupalOAuthDataStore.inc
-files[] = includes/DrupalOAuthRequest.inc
-files[] = includes/DrupalOAuthToken.inc
-files[] = includes/DrupalOAuthConsumer.inc
-files[] = includes/DrupalOAuthClient.inc
+files[] = includes/BackdropOAuthServer.inc
+files[] = includes/BackdropOAuthDataStore.inc
+files[] = includes/BackdropOAuthRequest.inc
+files[] = includes/BackdropOAuthToken.inc
+files[] = includes/BackdropOAuthConsumer.inc
+files[] = includes/BackdropOAuthClient.inc
 files[] = includes/OAuthSignatureMethod_HMAC.inc

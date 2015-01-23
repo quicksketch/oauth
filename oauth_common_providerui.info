@@ -6,9 +6,5 @@ dependencies[] = oauth_common
 
 backdrop = 1.x
 
-; Information added by Drupal.org packaging script on 2014-01-24
-version = "7.x-3.2"
-core = "7.x"
-project = "oauth"
-datestamp = "1390561406"
+
 
