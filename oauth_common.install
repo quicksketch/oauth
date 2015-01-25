@@ -3,6 +3,23 @@
  * @file
  * Installation and schema related functions for the OAuth module
  */
+ 
+ /**
+* Move oauth_common settings from variables to config.
+*/
+function oauth_common_update_1000() {
+// Migrate variables to config.
+$config = config('oauth_common.settings');
+$config->set('oauth_common_enable_provider', update_variable_get('oauth_common_enable_provider',TRUE));
+$config->set('oauth_common_request_token_lifetime', update_variable_get('oauth_common_request_token_lifetime', 7200));
+$config->set('oauth_common_login_path', update_variable_get('oauth_common_login_path', 'OAUTH_COMMON_LOGIN_PATH'));
+$config->save();
+// Delete variables.
+update_variable_del('oauth_common_enable_provider');
+update_variable_del('oauth_common_request_token_lifetime');
+update_variable_del('oauth_common_login_path');
+}
+
 
 /**
  * Implements hook_requirements().
