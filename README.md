@@ -13,6 +13,10 @@ The callback to be used is /oauth/authorized/% where % is the id of the consumer
 used by the client. We need the id of the consumer to be able to find the token
 correctly.
 
+<h2>Status</h2>
+
+This Backdrop version of a Drupal contributed module is under development.
+
 
 <h2>Installation</h2>
 
