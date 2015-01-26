@@ -10,27 +10,23 @@ function _oauth_common_admin() {
   $form['oauth_common_enable_provider'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable the oauth provider'),
-    '#default_value' => config_get('oauth.settings', 'oauth_common_enable_provider'),
+    '#default_value' => config_get('oauth_common.settings', 'oauth_common_enable_provider'),
     '#description' => t('This option controls whether this site should act as a OAuth provider or not'),
   );
 
   $form['oauth_common_request_token_lifetime'] = array(
     '#type' => 'textfield',
     '#title' => t('Request token lifetime (in seconds)'),
-    '#default_value' => config_get('oauth.settings', 'oauth_common_request_token_lifetime'),
+    '#default_value' => config_get('oauth_common.settings', 'oauth_common_request_token_lifetime'),
   );
 
   $form['oauth_common_login_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Login page'),
     '#description' => t('Specify an alternative login page. This is useful when, for example, you want to show a mobile-enhanced login page.'),
-    '#default_value' => config_get('oauth.settings', 'oauth_common_login_path'),
+    '#default_value' => config_get('oauth_common.settings', 'oauth_common_login_path'),
   );
 
-  $form['#validate'][] = '_oauth_common_admin_settings_validate';
-
- // return system_settings_form($form);
-  
     // Add a submit button
   $form['actions']['#type'] = 'actions';
   $form['actions']['submit'] = array(
@@ -43,7 +39,7 @@ function _oauth_common_admin() {
 }
 
 // Add a submit function to process config
-function my_settings_form_submit($form, &$form_state) {
+function _oauth_common_admin_submit($form, &$form_state) {
   $config = config('oauth_common.settings');
   $config->set('oauth_common_enable_provider', $form_state['values']['oauth_common_enable_provider']);
   $config->set('oauth_common_request_token_lifetime', $form_state['values']['oauth_common_request_token_lifetime']);
