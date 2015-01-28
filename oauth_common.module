@@ -15,6 +15,17 @@ define('OAUTH_COMMON_LOGIN_PATH', 'user/login');
 //TODO: Move provider ui related pages to provider ui
 
 /**
+ * Implements hook_config_info().
+ */
+function oauth_common_config_info() {
+  $prefixes['oauth_common.settings'] = array(
+    'label' => t('OAuth settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implements hook_permission().
  */
 function oauth_common_permission() {
