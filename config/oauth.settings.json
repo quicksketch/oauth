@@ -1,6 +1,6 @@
 {
     "_config_name": "oauth_common.settings",
-    "oauth_common_enable_provider": TRUE,
+    "oauth_common_enable_provider": true,
     "oauth_common_request_token_lifetime": 7200,
     "oauth_common_login_path": "OAUTH_COMMON_LOGIN_PATH"
 }
